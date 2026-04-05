@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // MÓDULO DE AUTENTICAÇÃO
 // Login com Google, inicialização do usuário novo e logout
 // ============================================================
@@ -51,8 +51,8 @@ async function inicializarUsuario(user) {
   const snap    = await userRef.get();
   const dados   = snap.exists ? snap.data() : null;
 
-  // Se já estiver marcado como inicializado, não faz nada
-  if (dados && dados.inicializado) return;
+  // Se já estiver inicializado e deduplicado
+  if (dados && dados.inicializado && dados.deduplicado) return;
 
   // 1. Criar ou atualizar documento do usuário
   const userBase = {
@@ -69,6 +69,36 @@ async function inicializarUsuario(user) {
   await userRef.set(userBase, { merge: true });
 
   const ts = firebase.firestore.FieldValue.serverTimestamp();
+
+  // Rotina de Correção Retroativa: Apagar Cartões e Pessoas Duplicados (Bug Antigo)
+  if (dados && !dados.deduplicado) {
+    const mapCartoes = {};
+    const mapPessoasCores = {};
+    const deleteBatch = db.batch();
+    
+    // Remove cartões com mesmo nome
+    const snapTodas = await userRef.collection('cartoes').get();
+    snapTodas.forEach(d => {
+      const nome = d.data().nome;
+      if (mapCartoes[nome]) deleteBatch.delete(d.ref);
+      else mapCartoes[nome] = true;
+    });
+
+    // Remove pessoas vazias com mesma cor
+    const snapTodasP = await userRef.collection('pessoas').get();
+    snapTodasP.forEach(d => {
+      const p = d.data();
+      if (p.nome === '') {
+        if (mapPessoasCores[p.cor]) deleteBatch.delete(d.ref);
+        else mapPessoasCores[p.cor] = true;
+      }
+    });
+
+    await deleteBatch.commit();
+    await userRef.update({ deduplicado: true });
+
+    if (dados.inicializado) return; // Se já inicializou, paramos aqui.
+  }
 
   // 2. Verificar e criar cartões padrão se a coleção estiver realmente vazia
   const snapCartoes = await userRef.collection('cartoes').limit(1).get();
@@ -98,8 +128,8 @@ async function inicializarUsuario(user) {
     await batch.commit();
   }
 
-  // Marcar como inicializado para nunca mais repetir esse processo
-  await userRef.update({ inicializado: true });
+  // Marcar como inicializado e deduplicado
+  await userRef.update({ inicializado: true, deduplicado: true });
 }
 
 /**
