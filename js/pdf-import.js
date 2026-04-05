@@ -1,17 +1,16 @@
 // ============================================================
 // PDF-IMPORT.JS — Importação e classificação de faturas em PDF
-// Depende de: PDF.js (cdnjs), app.js, auth.js
+// Depende de: PDF.js (CDN), app.js, auth.js
 // ============================================================
 
-// Estado da importação atual
 const estadoImport = {
-  cartaoId       : null,
-  mes            : null,
-  linhas         : [],        // Lançamentos extraídos do PDF
-  classificados  : [],        // Lançamentos prontos para salvar
-  indexAtual     : 0,         // Índice no modal de classificação manual
-  pessoas        : [],        // Cache das pessoas
-  cartoes        : []         // Cache dos cartões
+  cartaoId      : null,
+  mes           : null,
+  linhas        : [],   // Lançamentos brutos extraídos do PDF
+  classificados : [],   // Cópia com dono/parcelas preenchidos
+  indexAtual    : 0,    // Índice no loop de classificação manual
+  pessoas       : [],   // Cache carregado uma vez
+  cartoes       : []    // Cache carregado uma vez
 };
 
 // ============================================================
@@ -26,20 +25,17 @@ async function inicializarPaginaFaturas() {
       carregarPessoasEstado()
     ]);
     configurarDropZone();
-    configurarFormImport();
     configurarModalClassificacao();
     await listarFaturasExistentes();
   } catch (err) {
     console.error('[PDF] Erro ao inicializar:', err);
-    mostrarToast('Erro ao carregar a página.', 'erro');
+    mostrarToast('Erro ao carregar a página de faturas.', 'erro');
   } finally {
     mostrarLoading(false);
   }
 }
 
-// ============================================================
-// CARREGAMENTO DE DADOS
-// ============================================================
+// ── Carregamento de dados ────────────────────────────────────
 
 async function carregarCartoesSelect() {
   const snap = await colecaoUsuario('cartoes').orderBy('nome').get();
@@ -57,17 +53,17 @@ async function carregarPessoasEstado() {
   const snap = await colecaoUsuario('pessoas').get();
   estadoImport.pessoas = snap.docs
     .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => p.nome);
+    .filter(p => p.nome); // Ignora pessoas sem nome ainda
 }
 
 async function listarFaturasExistentes() {
-  const snap = await colecaoUsuario('faturas')
-    .orderBy('mes', 'desc')
-    .limit(20)
-    .get();
-
   const lista = document.getElementById('listaFaturas');
   if (!lista) return;
+
+  const snap = await colecaoUsuario('faturas')
+    .orderBy('mes', 'desc')
+    .limit(30)
+    .get();
 
   if (snap.empty) {
     lista.innerHTML = '<p class="empty-state">Nenhuma fatura importada ainda.</p>';
@@ -75,29 +71,32 @@ async function listarFaturasExistentes() {
   }
 
   lista.innerHTML = '';
-  for (const doc of snap.docs) {
+  snap.forEach(doc => {
     const f      = doc.data();
     const cartao = estadoImport.cartoes.find(c => c.id === f.cartao_id);
+    const cor    = cartao?.cor || '#3b82f6';
     const badge  = f.status === 'fechada'
       ? '<span class="badge badge-success">Fechada</span>'
       : '<span class="badge badge-warning">Aberta</span>';
 
     lista.innerHTML += `
-      <div class="card card-row" style="border-left:4px solid ${cartao?.cor||'#3b82f6'}">
-        <div>
-          <strong>${cartao?.nome || 'Cartão'}</strong>
-          <span class="text-muted">${formatarMes(f.mes)}</span>
+      <div class="card-row card" style="border-left:4px solid ${cor}">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700">${cartao?.nome || 'Cartão'}</div>
+          <div class="text-muted small">${formatarMes(f.mes)}</div>
         </div>
         <div class="row-mid">
           ${badge}
           <span class="mono">${formatarMoeda(f.total)}</span>
         </div>
         <div class="row-actions">
-          <button class="btn btn-sm btn-ghost" onclick="verLancamentosFatura('${doc.id}','${f.mes}')">Ver</button>
-          <button class="btn btn-sm btn-danger" onclick="excluirFatura('${doc.id}')">Excluir</button>
+          <button class="btn btn-sm btn-ghost"
+              onclick="verLancamentosFatura('${doc.id}','${f.mes}')">Ver</button>
+          <button class="btn btn-sm btn-danger"
+              onclick="excluirFatura('${doc.id}')">Excluir</button>
         </div>
       </div>`;
-  }
+  });
 }
 
 // ============================================================
@@ -115,61 +114,51 @@ function configurarDropZone() {
     e.preventDefault();
     zone.classList.add('dragover');
   });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  ['dragleave', 'dragend'].forEach(ev =>
+    zone.addEventListener(ev, () => zone.classList.remove('dragover'))
+  );
 
   zone.addEventListener('drop', e => {
     e.preventDefault();
     zone.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
-    if (file?.type === 'application/pdf') processarPDF(file);
+    if (file?.type === 'application/pdf') iniciarImportacao(file);
     else mostrarToast('Selecione um arquivo PDF válido.', 'aviso');
   });
 
   inp.addEventListener('change', () => {
-    if (inp.files[0]) processarPDF(inp.files[0]);
+    if (inp.files[0]) iniciarImportacao(inp.files[0]);
   });
+
+  // Preenche mês padrão
+  const mesInput = document.getElementById('mesImport');
+  if (mesInput && !mesInput.value) mesInput.value = getMesAtual();
 }
 
-function configurarFormImport() {
-  const form = document.getElementById('formImportacao');
-  form?.addEventListener('submit', e => {
-    e.preventDefault();
-    estadoImport.cartaoId = document.getElementById('selectCartaoImport').value;
-    estadoImport.mes      = document.getElementById('mesImport').value;
+function iniciarImportacao(arquivo) {
+  estadoImport.cartaoId = document.getElementById('selectCartaoImport')?.value;
+  estadoImport.mes      = document.getElementById('mesImport')?.value;
 
-    if (!estadoImport.cartaoId || !estadoImport.mes) {
-      mostrarToast('Selecione o cartão e o mês antes de importar.', 'aviso');
-      return;
-    }
-    document.getElementById('dropZone').click();
-  });
-
-  // Preenche o mês padrão com o mês atual
-  const mesInput = document.getElementById('mesImport');
-  if (mesInput) mesInput.value = getMesAtual();
+  if (!estadoImport.cartaoId) {
+    mostrarToast('Selecione o cartão antes de importar.', 'aviso');
+    return;
+  }
+  if (!estadoImport.mes) {
+    mostrarToast('Selecione o mês antes de importar.', 'aviso');
+    return;
+  }
+  processarPDF(arquivo);
 }
 
 // ============================================================
 // PROCESSAMENTO DO PDF
 // ============================================================
 
-/**
- * Lê o arquivo PDF com PDF.js e extrai o texto de todas as páginas.
- * @param {File} arquivo
- */
 async function processarPDF(arquivo) {
-  // Verificar se cartão e mês foram selecionados
-  estadoImport.cartaoId = document.getElementById('selectCartaoImport')?.value;
-  estadoImport.mes      = document.getElementById('mesImport')?.value;
-
-  if (!estadoImport.cartaoId || !estadoImport.mes) {
-    mostrarToast('Selecione o cartão e o mês antes de carregar o PDF.', 'aviso');
-    return;
-  }
-
   mostrarLoading(true);
-  document.getElementById('progressoImport').style.display = 'block';
-  setProgresso('Lendo PDF...', 10);
+  const progressoEl = document.getElementById('progressoImport');
+  if (progressoEl) progressoEl.style.display = 'block';
+  setProgresso('Lendo PDF…', 10);
 
   try {
     const arrayBuffer = await arquivo.arrayBuffer();
@@ -177,75 +166,70 @@ async function processarPDF(arquivo) {
     let textoCompleto = '';
 
     for (let i = 1; i <= pdfDoc.numPages; i++) {
-      const page  = await pdfDoc.getPage(i);
-      const texto = await page.getTextContent();
-      textoCompleto += texto.items.map(t => t.str).join(' ') + '\n';
-      setProgresso(`Lendo página ${i} de ${pdfDoc.numPages}...`, 10 + (i / pdfDoc.numPages) * 40);
+      const page    = await pdfDoc.getPage(i);
+      const conteudo = await page.getTextContent();
+      textoCompleto += conteudo.items.map(t => t.str).join(' ') + '\n';
+      setProgresso(`Lendo página ${i} de ${pdfDoc.numPages}…`, 10 + (i / pdfDoc.numPages) * 40);
     }
 
-    setProgresso('Identificando lançamentos...', 55);
+    setProgresso('Identificando lançamentos…', 55);
     const linhas = parsearTextoFatura(textoCompleto);
 
-    if (linhas.length === 0) {
+    if (!linhas.length) {
       mostrarToast('Nenhum lançamento encontrado no PDF. Verifique o arquivo.', 'aviso');
-      document.getElementById('progressoImport').style.display = 'none';
+      if (progressoEl) progressoEl.style.display = 'none';
       mostrarLoading(false);
       return;
     }
 
-    setProgresso(`${linhas.length} lançamentos encontrados. Buscando na memória...`, 70);
+    setProgresso(`${linhas.length} lançamentos encontrados. Buscando na memória…`, 70);
     estadoImport.linhas = linhas;
     await aplicarMemoriaDescricoes(linhas);
 
     setProgresso('Pronto!', 100);
     setTimeout(() => {
-      document.getElementById('progressoImport').style.display = 'none';
-      mostrarRevisaoImport();
+      if (progressoEl) progressoEl.style.display = 'none';
+      estadoImport.classificados = JSON.parse(JSON.stringify(estadoImport.linhas));
+      iniciarClassificacaoManual();
     }, 600);
 
   } catch (err) {
     console.error('[PDF] Erro ao processar:', err);
     mostrarToast('Erro ao processar o PDF. Tente outro arquivo.', 'erro');
-    document.getElementById('progressoImport').style.display = 'none';
+    if (progressoEl) progressoEl.style.display = 'none';
   } finally {
     mostrarLoading(false);
   }
 }
 
 function setProgresso(msg, pct) {
-  const bar  = document.getElementById('barraProgresso');
-  const txt  = document.getElementById('textoProgresso');
-  if (bar) bar.style.width  = pct + '%';
-  if (txt) txt.textContent  = msg;
+  const bar = document.getElementById('barraProgresso');
+  const txt = document.getElementById('textoProgresso');
+  if (bar) bar.style.width = pct + '%';
+  if (txt) txt.textContent = msg;
 }
 
 // ============================================================
-// PARSER DE TEXTO DA FATURA
+// PARSER DE TEXTO
 // ============================================================
 
 /**
- * Extrai lançamentos de um bloco de texto bruto da fatura.
- * Suporta variações de formato das principais bandeiras.
- * @param {string} texto
- * @returns {Array} linhas com { descricao, valor, data, origem }
+ * Extrai lançamentos do texto bruto da fatura.
+ * Suporta formatos: "DD/MM DESCRIÇÃO R$ 1.234,56" e variações.
  */
 function parsearTextoFatura(texto) {
   const resultados = [];
 
-  // Padrões possíveis:
-  // "15/01 DESCRICAO R$ 1.234,56"
-  // "15 JAN DESCRICAO 1.234,56"
-  // "15/01/2026 DESCRICAO 1.234,56"
   const padroes = [
-    // DD/MM + descrição + R$ valor
-    /(\d{2}\/\d{2}(?:\/\d{4})?)\s+(.+?)\s+R\$\s*([\d.,]+)/gi,
-    // DD/MM + descrição + valor sem R$
-    /(\d{2}\/\d{2}(?:\/\d{4})?)\s+(.+?)\s+([\d]{1,3}(?:\.\d{3})*,\d{2})/gi,
+    // Com "R$" explícito
+    /(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+R\$\s*([\d.]+,\d{2})/gi,
+    // Sem "R$" — valor no padrão brasileiro
+    /(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+(\d{1,3}(?:\.\d{3})*,\d{2})\b/gi,
   ];
 
-  const linhastexto = texto.split('\n');
+  const linhas = texto.split('\n');
 
-  for (const linha of linhastexto) {
+  for (const linha of linhas) {
     const limpa = linha.trim();
     if (!limpa) continue;
 
@@ -253,63 +237,59 @@ function parsearTextoFatura(texto) {
       padrao.lastIndex = 0;
       let match;
       while ((match = padrao.exec(limpa)) !== null) {
-        const dataStr  = match[1].trim();
+        const dataStr  = match[1];
         const desc     = limparDescricao(match[2]);
         const valorStr = match[3].replace(/\./g, '').replace(',', '.');
         const valor    = parseFloat(valorStr);
 
-        if (!desc || isNaN(valor) || valor <= 0 || valor > 99999) continue;
-        if (isLinhaTotalizadora(desc)) continue; // Ignorar totais/subtotais
+        if (!desc || isNaN(valor) || valor <= 0 || valor > 99_999) continue;
+        if (isLinhaTotalizadora(desc)) continue;
 
-        // Evitar duplicatas na mesma extração
+        // Evita duplicatas dentro da mesma extração
         const jaExiste = resultados.some(r =>
           r.descricao === desc && Math.abs(r.valor - valor) < 0.01
         );
-        if (!jaExiste) {
-          resultados.push({
-            descricao     : desc,
-            valor,
-            data          : normalizarData(dataStr),
-            origem        : 'pdf',
-            dono          : null,
-            parcela_atual : 1,
-            total_parcelas: 1,
-            classificacao : 'manual', // será atualizado se encontrar na memória
-            lembrar       : false
-          });
-        }
+        if (jaExiste) continue;
+
+        resultados.push({
+          descricao     : desc,
+          valor,
+          data          : normalizarData(dataStr),
+          dono          : null,  // null = precisa de classificação
+          parcela_atual : 1,
+          total_parcelas: 1,
+          classificacao : 'manual',
+          lembrar       : false
+        });
       }
     }
   }
 
-  // Ordenar por data
   resultados.sort((a, b) => a.data.localeCompare(b.data));
   return resultados;
 }
 
-/** Remove lixo da descrição: números de cartão, prefixos comuns */
 function limparDescricao(str) {
-  return str
-    .replace(/\*+\d{4}/g, '')       // *1234 (número mascarado do cartão)
-    .replace(/\b\d{4}\b/g, '')       // sequências de 4 dígitos
+  return (str || '')
+    .replace(/\*+\d{4}/g, '')   // número mascarado *1234
+    .replace(/\b\d{4}\b/g, '')  // sequências de 4 dígitos soltos
     .replace(/\s{2,}/g, ' ')
     .trim()
     .substring(0, 80);
 }
 
-/** Verifica se a linha é um totalizador que deve ser ignorado */
 function isLinhaTotalizadora(desc) {
-  const palavras = ['total', 'subtotal', 'saldo', 'pagamento', 'crédito', 'limite', 'vencimento'];
-  const norm = normalizarString(desc);
-  return palavras.some(p => norm.startsWith(p));
+  const palavras = ['total', 'subtotal', 'saldo', 'pagamento', 'credito', 'limite', 'vencimento'];
+  return palavras.some(p => normalizarString(desc).startsWith(p));
 }
 
-/** Converte "DD/MM" ou "DD/MM/YYYY" em "YYYY-MM-DD" */
-function normalizarData(dataStr) {
-  const partes = dataStr.split('/');
-  const dia    = partes[0].padStart(2, '0');
-  const mes    = partes[1].padStart(2, '0');
-  const ano    = partes[2] || new Date().getFullYear().toString();
+function normalizarData(str) {
+  const p   = str.split('/');
+  const dia = p[0].padStart(2, '0');
+  const mes = p[1].padStart(2, '0');
+  const ano = p[2]
+    ? (p[2].length === 2 ? '20' + p[2] : p[2])
+    : new Date().getFullYear().toString();
   return `${ano}-${mes}-${dia}`;
 }
 
@@ -317,212 +297,150 @@ function normalizarData(dataStr) {
 // MEMÓRIA DE DESCRIÇÕES
 // ============================================================
 
-/**
- * Para cada lançamento, busca na coleção `memoria_descricoes`.
- * Se encontrar, preenche dono e parcelas automaticamente.
- */
 async function aplicarMemoriaDescricoes(linhas) {
-  let snap;
   try {
-    snap = await colecaoUsuario('memoria_descricoes').get();
+    const snap     = await colecaoUsuario('memoria_descricoes').get();
+    const memorias = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    for (const linha of linhas) {
+      const chave = normalizarString(linha.descricao);
+      const match = memorias.find(m => {
+        const mc = normalizarString(m.descricao_chave || '');
+        return mc && (chave.includes(mc) || mc.includes(chave));
+      });
+      if (match) {
+        linha.dono           = match.dono;
+        linha.total_parcelas = match.total_parcelas || 1;
+        linha.classificacao  = 'automatico';
+      }
+    }
   } catch (err) {
     console.warn('[Memória] Não foi possível carregar:', err);
-    return;
   }
+}
 
-  const memorias = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-  for (const linha of linhas) {
-    const chave = normalizarString(linha.descricao);
-    const match = memorias.find(m => {
-      const mChave = normalizarString(m.descricao_chave || '');
-      return chave.includes(mChave) || mChave.includes(chave);
+async function salvarMemoriaDescricao(lancamento) {
+  try {
+    await colecaoUsuario('memoria_descricoes').add({
+      descricao_chave : normalizarString(lancamento.descricao),
+      dono            : lancamento.dono,
+      total_parcelas  : lancamento.total_parcelas,
+      atualizado_em   : firebase.firestore.FieldValue.serverTimestamp()
     });
-
-    if (match) {
-      linha.dono           = match.dono;
-      linha.total_parcelas = match.total_parcelas || 1;
-      linha.classificacao  = 'automatico';
-    }
+  } catch (err) {
+    console.warn('[Memória] Erro ao salvar:', err);
   }
 }
 
 // ============================================================
-// TELA DE REVISÃO — lista todos os lançamentos antes de confirmar
-// ============================================================
-
-function mostrarRevisaoImport() {
-  const container = document.getElementById('revisaoContainer');
-  const secao     = document.getElementById('secaoRevisao');
-  if (!container || !secao) return;
-
-  estadoImport.classificados = JSON.parse(JSON.stringify(estadoImport.linhas));
-
-  // Verificar quantos precisam de classificação manual
-  const semClassificacao = estadoImport.classificados.filter(l => !l.dono);
-  if (semClassificacao.length > 0) {
-    // Iniciar fluxo de classificação manual
-    estadoImport.indexAtual = 0;
-    proximoParaClassificar();
-    return;
-  }
-
-  renderizarRevisao();
-}
-
-function renderizarRevisao() {
-  const container = document.getElementById('revisaoContainer');
-  const secao     = document.getElementById('secaoRevisao');
-  secao.style.display = 'block';
-
-  const cartao = estadoImport.cartoes.find(c => c.id === estadoImport.cartaoId);
-  let total    = 0;
-
-  container.innerHTML = `
-    <div class="revisao-header">
-      <h3>📑 Revisão — ${cartao?.nome || ''} · ${formatarMes(estadoImport.mes)}</h3>
-      <p class="text-muted">${estadoImport.classificados.length} lançamentos</p>
-    </div>
-    <div class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Descrição</th>
-            <th>Valor</th>
-            <th>Responsável</th>
-            <th>Parcelas</th>
-            <th>Origem</th>
-          </tr>
-        </thead>
-        <tbody id="tbodyRevisao"></tbody>
-      </table>
-    </div>
-    <div class="revisao-footer">
-      <div class="total-revisao">Total: <span class="mono valor-positivo" id="totalRevisao"></span></div>
-      <div class="revisao-acoes">
-        <button class="btn btn-ghost" onclick="cancelarImportacao()">Cancelar</button>
-        <button class="btn btn-primary" onclick="confirmarImportacao()">Confirmar e salvar</button>
-      </div>
-    </div>
-  `;
-
-  const tbody = document.getElementById('tbodyRevisao');
-  estadoImport.classificados.forEach((l, i) => {
-    total += l.valor;
-    const donoTexto = formatarDonoTexto(l.dono);
-    const parc      = l.total_parcelas > 1 ? `${l.parcela_atual}/${l.total_parcelas}` : '—';
-    const origBadge = l.classificacao === 'automatico'
-      ? '<span class="badge badge-info">Auto</span>'
-      : '<span class="badge badge-warning">Manual</span>';
-
-    tbody.innerHTML += `
-      <tr>
-        <td class="mono">${l.data.slice(5).split('-').reverse().join('/')}</td>
-        <td>${l.descricao}</td>
-        <td class="mono valor-negativo">${formatarMoeda(l.valor)}</td>
-        <td>${donoTexto}</td>
-        <td class="mono">${parc}</td>
-        <td>${origBadge}</td>
-      </tr>`;
-  });
-
-  document.getElementById('totalRevisao').textContent = formatarMoeda(total);
-}
-
-function formatarDonoTexto(dono) {
-  if (!dono || !dono.length) return '<span class="text-muted">—</span>';
-  return dono.map(d => {
-    if (d.pessoa_id === 'eu') return 'Eu';
-    const p = estadoImport.pessoas.find(x => x.id === d.pessoa_id);
-    const pct = d.percentual < 100 ? ` (${d.percentual}%)` : '';
-    return `<span class="badge" style="background:${p?.cor||'#666'}">${p?.nome || '?'}${pct}</span>`;
-  }).join(' ');
-}
-
-// ============================================================
-// MODAL DE CLASSIFICAÇÃO MANUAL
+// CLASSIFICAÇÃO MANUAL — modal sequencial
 // ============================================================
 
 function configurarModalClassificacao() {
-  // Formulário de classificação
-  document.getElementById('formClassificacao')?.addEventListener('submit', salvarClassificacaoAtual);
+  document.getElementById('formClassificacao')
+    ?.addEventListener('submit', salvarClassificacaoAtual);
 
-  // Rateio múltiplo
-  document.getElementById('btnAddRateio')?.addEventListener('click', adicionarLinhaRateio);
+  document.getElementById('btnAddRateio')
+    ?.addEventListener('click', adicionarLinhaRateio);
+
+  // Toggle rateio ao mudar seleção de dono
+  document.getElementById('cl-dono-principal')
+    ?.addEventListener('change', e => {
+      const area = document.getElementById('rateioArea');
+      if (!area) return;
+      const mostrar = e.target.value === 'rateio';
+      area.style.display = mostrar ? 'block' : 'none';
+      if (mostrar && !document.querySelector('.rateio-linha')) {
+        adicionarLinhaRateio();
+        adicionarLinhaRateio();
+      }
+    });
 }
 
-function proximoParaClassificar() {
+function iniciarClassificacaoManual() {
+  // Encontra o primeiro item sem dono
+  const pendentes = estadoImport.classificados.filter(l => !l.dono);
+  if (!pendentes.length) {
+    renderizarRevisao();
+    return;
+  }
+  avancarParaProxima();
+}
+
+function avancarParaProxima() {
   const pendentes = estadoImport.classificados
     .map((l, i) => ({ l, i }))
     .filter(({ l }) => !l.dono);
 
-  if (pendentes.length === 0) {
+  if (!pendentes.length) {
+    fecharModal('modalClassificacao');
     renderizarRevisao();
     return;
   }
 
   const { l, i } = pendentes[0];
   estadoImport.indexAtual = i;
-  preencherModalClassificacao(l);
+  preencherModalClassificacao(l, pendentes.length);
   abrirModal('modalClassificacao');
 }
 
-function preencherModalClassificacao(lancamento) {
+/** Pular item — marca com dono "eu" e avança */
+function pularClassificacao() {
+  const i = estadoImport.indexAtual;
+  estadoImport.classificados[i].dono = [{ pessoa_id: 'eu', percentual: 100 }];
+  estadoImport.classificados[i].classificacao = 'pulado';
+  fecharModal('modalClassificacao');
+  setTimeout(avancarParaProxima, 200);
+}
+
+function preencherModalClassificacao(lancamento, totalPendentes) {
   document.getElementById('cl-descricao').textContent = lancamento.descricao;
   document.getElementById('cl-valor').textContent     = formatarMoeda(lancamento.valor);
+  document.getElementById('cl-progresso').textContent = `Faltam: ${totalPendentes}`;
+  document.getElementById('cl-total-parcelas').value  = lancamento.total_parcelas || 1;
+  document.getElementById('cl-parcela-atual').value   = lancamento.parcela_atual  || 1;
+  document.getElementById('cl-lembrar').checked       = false;
 
-  // Preencher select de pessoas
   const selDono = document.getElementById('cl-dono-principal');
   if (selDono) {
     selDono.innerHTML = '<option value="eu">Eu mesmo (100%)</option>';
     estadoImport.pessoas.forEach(p => {
       selDono.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
     });
-    selDono.innerHTML += '<option value="rateio">Dividir entre pessoas...</option>';
+    selDono.innerHTML += '<option value="rateio">Dividir entre várias pessoas…</option>';
   }
 
-  // Parcelas
-  document.getElementById('cl-total-parcelas').value = lancamento.total_parcelas || 1;
-  document.getElementById('cl-parcela-atual').value  = lancamento.parcela_atual  || 1;
-
-  // Lembrar
-  document.getElementById('cl-lembrar').checked = false;
-
-  // Rateio
-  document.getElementById('rateioArea').style.display = 'none';
+  const rateioArea = document.getElementById('rateioArea');
+  if (rateioArea) rateioArea.style.display = 'none';
   document.getElementById('rateioLinhas').innerHTML = '';
-
-  // Mostrar progresso
-  const total    = estadoImport.classificados.filter(l => !l.dono).length;
-  const restante = estadoImport.classificados.filter(l => !l.dono).length;
-  document.getElementById('cl-progresso').textContent =
-    `Falta classificar: ${restante} lançamento(s)`;
 }
 
 function adicionarLinhaRateio() {
-  const area = document.getElementById('rateioLinhas');
-  const div  = document.createElement('div');
+  const div = document.createElement('div');
   div.className = 'rateio-linha';
   div.innerHTML = `
     <select class="form-control rateio-pessoa">
       <option value="eu">Eu</option>
-      ${estadoImport.pessoas.map(p => `<option value="${p.id}">${p.nome}</option>`).join('')}
+      ${estadoImport.pessoas.map(p =>
+        `<option value="${p.id}">${p.nome}</option>`
+      ).join('')}
     </select>
-    <input type="number" class="form-control rateio-pct" placeholder="%" min="1" max="100" value="50">
-    <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.rateio-linha').remove()">✕</button>
+    <input type="number" class="form-control rateio-pct"
+           placeholder="%" min="1" max="100" value="50">
+    <button type="button" class="btn btn-sm btn-danger"
+            onclick="this.closest('.rateio-linha').remove()">✕</button>
   `;
-  area.appendChild(div);
+  document.getElementById('rateioLinhas').appendChild(div);
 }
 
 function salvarClassificacaoAtual(e) {
   e.preventDefault();
-  const i          = estadoImport.indexAtual;
-  const lancamento = estadoImport.classificados[i];
-  const donoSel    = document.getElementById('cl-dono-principal').value;
-  const parcTotal  = parseInt(document.getElementById('cl-total-parcelas').value) || 1;
-  const parcAtual  = parseInt(document.getElementById('cl-parcela-atual').value)  || 1;
-  const lembrar    = document.getElementById('cl-lembrar').checked;
+  const i        = estadoImport.indexAtual;
+  const lanc     = estadoImport.classificados[i];
+  const donoSel  = document.getElementById('cl-dono-principal').value;
+  const parcTotal = parseInt(document.getElementById('cl-total-parcelas').value) || 1;
+  const parcAtual = parseInt(document.getElementById('cl-parcela-atual').value)  || 1;
+  const lembrar  = document.getElementById('cl-lembrar').checked;
 
   // Construir array dono
   let dono;
@@ -532,65 +450,114 @@ function salvarClassificacaoAtual(e) {
       pessoa_id : l.querySelector('.rateio-pessoa').value,
       percentual: parseFloat(l.querySelector('.rateio-pct').value) || 0
     }));
-    const totalPct = dono.reduce((s, d) => s + d.percentual, 0);
-    if (Math.abs(totalPct - 100) > 0.5) {
-      mostrarToast('A soma dos percentuais deve ser 100%.', 'aviso');
+    const soma = dono.reduce((s, d) => s + d.percentual, 0);
+    if (Math.abs(soma - 100) > 0.5) {
+      mostrarToast(`Soma dos percentuais é ${soma.toFixed(0)}%. Deve ser 100%.`, 'aviso');
       return;
     }
   } else {
     dono = [{ pessoa_id: donoSel, percentual: 100 }];
   }
 
-  lancamento.dono           = dono;
-  lancamento.total_parcelas = parcTotal;
-  lancamento.parcela_atual  = parcAtual;
-  lancamento.classificacao  = 'manual';
+  lanc.dono           = dono;
+  lanc.total_parcelas = parcTotal;
+  lanc.parcela_atual  = parcAtual;
+  lanc.classificacao  = 'manual';
 
-  if (lembrar) salvarMemoriaDescricao(lancamento);
+  if (lembrar) salvarMemoriaDescricao(lanc);
 
   fecharModal('modalClassificacao');
-  proximoParaClassificar(); // Avança para o próximo pendente
-}
-
-// Alterna exibição do rateio
-document.addEventListener('change', e => {
-  if (e.target.id === 'cl-dono-principal') {
-    const area = document.getElementById('rateioArea');
-    if (area) area.style.display = e.target.value === 'rateio' ? 'block' : 'none';
-    if (e.target.value === 'rateio' && !document.querySelector('.rateio-linha')) {
-      adicionarLinhaRateio(); adicionarLinhaRateio();
-    }
-  }
-});
-
-// ============================================================
-// SALVAR NA MEMÓRIA
-// ============================================================
-
-async function salvarMemoriaDescricao(lancamento) {
-  try {
-    const chave = normalizarString(lancamento.descricao);
-    await colecaoUsuario('memoria_descricoes').add({
-      descricao_chave: chave,
-      dono           : lancamento.dono,
-      total_parcelas : lancamento.total_parcelas,
-      atualizado_em  : firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch (err) {
-    console.warn('[Memória] Erro ao salvar:', err);
-  }
+  setTimeout(avancarParaProxima, 200);
 }
 
 // ============================================================
-// CONFIRMAÇÃO FINAL — salvar no Firestore
+// TELA DE REVISÃO
+// ============================================================
+
+function renderizarRevisao() {
+  const secao     = document.getElementById('secaoRevisao');
+  const container = document.getElementById('revisaoContainer');
+  if (!secao || !container) return;
+
+  secao.style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const cartao = estadoImport.cartoes.find(c => c.id === estadoImport.cartaoId);
+  let total    = 0;
+
+  container.innerHTML = `
+    <div class="revisao-header">
+      <h3>📋 Revisão — ${cartao?.nome || ''} · ${formatarMes(estadoImport.mes)}</h3>
+      <span class="text-muted small">${estadoImport.classificados.length} lançamentos</span>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Data</th><th>Descrição</th><th style="text-align:right">Valor</th>
+            <th>Responsável</th><th>Parcelas</th><th>Origem</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyRevisao"></tbody>
+      </table>
+    </div>
+    <div class="revisao-footer">
+      <div class="total-revisao">
+        Total: <span class="mono valor-negativo" id="totalRevisao"></span>
+      </div>
+      <div class="revisao-acoes">
+        <button class="btn btn-ghost" onclick="cancelarImportacao()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarImportacao()">Confirmar e salvar</button>
+      </div>
+    </div>`;
+
+  const tbody = document.getElementById('tbodyRevisao');
+  estadoImport.classificados.forEach(l => {
+    total += l.valor;
+    const dataFmt    = l.data ? l.data.slice(5).split('-').reverse().join('/') : '—';
+    const donoTexto  = _formatarDonoTexto(l.dono);
+    const parc       = l.total_parcelas > 1 ? `${l.parcela_atual}/${l.total_parcelas}` : '—';
+    const origemBadge = l.classificacao === 'automatico'
+      ? '<span class="badge badge-info">Auto</span>'
+      : l.classificacao === 'pulado'
+        ? '<span class="badge badge-warning">Pulado</span>'
+        : '<span class="badge" style="background:var(--secondary)">Manual</span>';
+
+    tbody.innerHTML += `
+      <tr>
+        <td class="mono small">${dataFmt}</td>
+        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+            title="${l.descricao}">${l.descricao}</td>
+        <td class="mono valor-negativo" style="text-align:right">${formatarMoeda(l.valor)}</td>
+        <td>${donoTexto}</td>
+        <td class="mono small">${parc}</td>
+        <td>${origemBadge}</td>
+      </tr>`;
+  });
+
+  document.getElementById('totalRevisao').textContent = formatarMoeda(total);
+}
+
+function _formatarDonoTexto(dono) {
+  if (!dono?.length) return '<span class="text-muted">—</span>';
+  return dono.map(d => {
+    if (d.pessoa_id === 'eu') return '<span class="badge" style="background:var(--primary)">Eu</span>';
+    const p   = estadoImport.pessoas.find(x => x.id === d.pessoa_id);
+    const pct = d.percentual < 100 ? ` ${d.percentual}%` : '';
+    return `<span class="badge" style="background:${p?.cor || '#555'}">${p?.nome || '?'}${pct}</span>`;
+  }).join(' ');
+}
+
+// ============================================================
+// CONFIRMAÇÃO FINAL
 // ============================================================
 
 async function confirmarImportacao() {
   mostrarLoading(true);
   try {
     const faturaId = await obterOuCriarFatura(estadoImport.cartaoId, estadoImport.mes);
-    const batch    = db.batch();
     const userRef  = db.collection('usuarios').doc(auth.currentUser.uid);
+    const batch    = db.batch();
     const ts       = firebase.firestore.FieldValue.serverTimestamp();
 
     for (const l of estadoImport.classificados) {
@@ -609,25 +576,22 @@ async function confirmarImportacao() {
       });
     }
 
-    // Atualizar fatura: status fechada, total
     const total = estadoImport.classificados.reduce((s, l) => s + l.valor, 0);
     batch.update(userRef.collection('faturas').doc(faturaId), {
       total,
-      status: 'fechada',
+      status      : 'fechada',
       importada_em: ts
     });
 
     await batch.commit();
 
-    mostrarToast(`${estadoImport.classificados.length} lançamentos salvos!`, 'sucesso');
-    document.getElementById('secaoRevisao').style.display = 'none';
-    estadoImport.linhas = [];
-    estadoImport.classificados = [];
+    mostrarToast(`${estadoImport.classificados.length} lançamentos salvos com sucesso!`, 'sucesso');
+    cancelarImportacao(); // Limpa estado
     await listarFaturasExistentes();
 
   } catch (err) {
     console.error('[PDF] Erro ao confirmar importação:', err);
-    mostrarToast('Erro ao salvar os lançamentos.', 'erro');
+    mostrarToast('Erro ao salvar os lançamentos. Tente novamente.', 'erro');
   } finally {
     mostrarLoading(false);
   }
@@ -636,36 +600,51 @@ async function confirmarImportacao() {
 function cancelarImportacao() {
   estadoImport.linhas        = [];
   estadoImport.classificados = [];
-  document.getElementById('secaoRevisao').style.display = 'none';
+  estadoImport.indexAtual    = 0;
+  const secao = document.getElementById('secaoRevisao');
+  if (secao) secao.style.display = 'none';
+  // Limpa o input de arquivo para permitir re-importar o mesmo arquivo
+  const inp = document.getElementById('inputPDF');
+  if (inp) inp.value = '';
 }
 
 // ============================================================
-// VER LANÇAMENTOS DE UMA FATURA EXISTENTE
+// VER / EXCLUIR FATURA
 // ============================================================
 
 async function verLancamentosFatura(faturaId, mes) {
   mostrarLoading(true);
   try {
-    const snap   = await colecaoUsuario('lancamentos').where('fatura_id', '==', faturaId).orderBy('data').get();
-    const modal  = document.getElementById('modalVerFatura');
-    const corpo  = document.getElementById('verFaturaCorpo');
+    const snap  = await colecaoUsuario('lancamentos')
+      .where('fatura_id', '==', faturaId)
+      .orderBy('data', 'asc')
+      .get();
+
+    const modal = document.getElementById('modalVerFatura');
+    const corpo = document.getElementById('verFaturaCorpo');
     if (!modal || !corpo) return;
 
     document.getElementById('verFaturaTitulo').textContent = formatarMes(mes);
 
     let total = 0;
     corpo.innerHTML = '';
-    snap.forEach(d => {
-      const l = d.data();
-      total += l.valor;
-      corpo.innerHTML += `
-        <tr>
-          <td class="mono">${l.data?.slice(5).split('-').reverse().join('/') || '—'}</td>
-          <td>${l.descricao}</td>
-          <td class="mono valor-negativo">${formatarMoeda(l.valor)}</td>
-          <td>${formatarDonoTexto(l.dono)}</td>
-        </tr>`;
-    });
+
+    if (snap.empty) {
+      corpo.innerHTML = '<tr><td colspan="4" class="empty-state">Sem lançamentos.</td></tr>';
+    } else {
+      snap.forEach(d => {
+        const l  = d.data();
+        total   += l.valor;
+        const dt = l.data ? l.data.slice(5).split('-').reverse().join('/') : '—';
+        corpo.innerHTML += `
+          <tr>
+            <td class="mono small">${dt}</td>
+            <td>${l.descricao}</td>
+            <td class="mono valor-negativo" style="text-align:right">${formatarMoeda(l.valor)}</td>
+            <td>${_formatarDonoTexto(l.dono)}</td>
+          </tr>`;
+      });
+    }
 
     document.getElementById('verFaturaTotal').textContent = formatarMoeda(total);
     abrirModal('modalVerFatura');
@@ -676,29 +655,29 @@ async function verLancamentosFatura(faturaId, mes) {
   }
 }
 
-// ============================================================
-// EXCLUIR FATURA
-// ============================================================
-
 async function excluirFatura(faturaId) {
-  confirmarExclusao('Excluir esta fatura e todos os seus lançamentos?', async () => {
-    mostrarLoading(true);
-    try {
-      // Excluir lançamentos
-      const snap = await colecaoUsuario('lancamentos').where('fatura_id', '==', faturaId).get();
-      const batch = db.batch();
-      const userRef = db.collection('usuarios').doc(auth.currentUser.uid);
-      snap.forEach(d => batch.delete(userRef.collection('lancamentos').doc(d.id)));
-      batch.delete(userRef.collection('faturas').doc(faturaId));
-      await batch.commit();
-      mostrarToast('Fatura excluída.', 'sucesso');
-      await listarFaturasExistentes();
-    } catch (err) {
-      mostrarToast('Erro ao excluir fatura.', 'erro');
-    } finally {
-      mostrarLoading(false);
+  confirmarExclusao(
+    'Excluir esta fatura e todos os seus lançamentos? Esta ação não pode ser desfeita.',
+    async () => {
+      mostrarLoading(true);
+      try {
+        const userRef = db.collection('usuarios').doc(auth.currentUser.uid);
+        const batch   = db.batch();
+
+        const snap = await colecaoUsuario('lancamentos')
+          .where('fatura_id', '==', faturaId)
+          .get();
+        snap.forEach(d => batch.delete(userRef.collection('lancamentos').doc(d.id)));
+        batch.delete(userRef.collection('faturas').doc(faturaId));
+
+        await batch.commit();
+        mostrarToast('Fatura excluída.', 'sucesso');
+        await listarFaturasExistentes();
+      } catch (err) {
+        mostrarToast('Erro ao excluir fatura.', 'erro');
+      } finally {
+        mostrarLoading(false);
+      }
     }
-  });
+  );
 }
-
-

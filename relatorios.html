@@ -1,100 +1,150 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatórios de Cobrança | Finanças Pessoais</title>
+    <title>Relatórios | SmartFinanças</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo">SmartFinanças</div>
-            <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item ">🏠 Dashboard</a>
-                <a href="receitas.html" class="nav-item ">📈 Receitas</a>
-                <a href="despesas.html" class="nav-item ">📉 Despesas fixas</a>
-                <a href="cartoes.html" class="nav-item ">💳 Cartões</a>
-                <a href="faturas.html" class="nav-item ">📄 Importar Faturas</a>
-                <a href="parcelamentos.html" class="nav-item ">⏳ Parcelamentos</a>
-                <a href="relatorios.html" class="nav-item active">📊 Relatórios/Cobrança</a>
-                <a href="pessoas.html" class="nav-item ">👥 Pessoas</a>
-            </nav>
-            <div class="sidebar-footer">
-                <div class="user-profile">
-                    <img id="userPhoto" src="" class="user-avatar" alt="">
-                    <div class="user-info">
-                        <div class="user-name" id="userName">...</div>
-                        <div class="user-email" id="userEmail">...</div>
-                    </div>
-                </div>
-                <button class="btn btn-logout" onclick="logout()">Sair</button>
-            </div>
-        </aside>
-        
-        <div id="sidebarOverlay"></div>
+<div class="app-container">
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <header class="page-header">
-                <div class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">☰</button>
-                    <h1>Relatório de Cobrança</h1>
-                </div>
-                
-                <div class="month-selector">
-                    <button class="month-nav" id="prevMonth">‹</button>
-                    <span id="monthDisplay">...</span>
-                    <button class="month-nav" id="nextMonth">›</button>
-                </div>
-            </header>
-
-            <div id="relatorioContainer">
-                <!-- JS popula aqui -->
-            </div>
-
-            <!-- Modal Fallback Copiar WhatsApp -->
-            <div class="modal-wrapper" id="modalTextoWhatsApp">
-                <div class="modal-overlay"></div>
-                <div class="modal-box">
-                    <div class="modal-header">
-                        <h3 class="modal-title">Copiar para WhatsApp</h3>
-                    </div>
-                    <div class="modal-body">
-                        <textarea id="textoWhatsApp" class="form-control" rows="10" style="font-family: var(--font-mono); font-size: 0.8125rem;"></textarea>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-ghost" onclick="fecharModal('modalTextoWhatsApp')">Fechar</button>
-                        <button type="button" class="btn btn-primary" onclick="copiarTextoModal()">Copiar Texto</button>
-                    </div>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">SmartFinanças</div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
+            <a href="receitas.html"  class="nav-item">📈 Receitas</a>
+            <a href="despesas.html"  class="nav-item">📉 Despesas fixas</a>
+            <a href="cartoes.html"   class="nav-item">💳 Cartões</a>
+            <a href="faturas.html"   class="nav-item">📄 Importar Faturas</a>
+            <a href="parcelamentos.html" class="nav-item">⏳ Parcelamentos</a>
+            <a href="relatorios.html"    class="nav-item active">📊 Relatórios/Cobrança</a>
+            <a href="pessoas.html"   class="nav-item">👥 Pessoas</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <img id="userPhoto" src="" class="user-avatar" alt="">
+                <div class="user-info">
+                    <div class="user-name"  id="userName">...</div>
+                    <div class="user-email" id="userEmail">...</div>
                 </div>
             </div>
-        </main>
+            <button class="btn btn-logout" onclick="logout()">Sair</button>
+        </div>
+    </aside>
+    <div id="sidebarOverlay"></div>
+
+    <!-- Conteúdo principal -->
+    <main class="main-content">
+        <header class="page-header">
+            <div class="page-title">
+                <button id="hamburger" class="btn btn-ghost">☰</button>
+                <h1>Relatório de Cobrança</h1>
+            </div>
+            <div class="month-selector">
+                <button class="month-nav" id="prevMonth">‹</button>
+                <span id="monthDisplay">...</span>
+                <button class="month-nav" id="nextMonth">›</button>
+            </div>
+        </header>
+
+        <div id="relatorioContainer">
+            <p class="empty-state">Selecione um mês para gerar o relatório.</p>
+        </div>
+    </main>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabBtn" title="Novo lançamento rápido">+</button>
+
+<!-- Modal: Fallback copiar WhatsApp -->
+<div class="modal-wrapper" id="modalTextoWhatsApp">
+    <div class="modal-overlay"></div>
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title">Copiar para WhatsApp</h3>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted small mb-4">Selecione o texto abaixo e copie manualmente (Ctrl+C).</p>
+            <textarea id="textoWhatsApp" class="form-control" rows="12"
+                style="font-family:var(--font-mono);font-size:0.8rem;resize:vertical"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="fecharModal('modalTextoWhatsApp')">Fechar</button>
+            <button type="button" class="btn btn-primary" onclick="copiarTextoModal()">Copiar Texto</button>
+        </div>
     </div>
+</div>
 
-    <!-- UI Components -->
-    <div id="loadingOverlay"><div class="spinner"></div></div>
-    <div id="toastContainer"></div>
+<!-- Modal: Lançamento Rápido (FAB) -->
+<div class="modal-wrapper" id="modalLancamentoRapido">
+    <div class="modal-overlay"></div>
+    <div class="modal-box">
+        <form id="formLancamentoRapido">
+            <div class="modal-header"><h3 class="modal-title">Novo Lançamento</h3></div>
+            <div class="modal-body">
+                <div class="fl-group">
+                    <select id="lr-cartao" class="form-control" required></select>
+                    <label>Cartão</label>
+                </div>
+                <div class="fl-group">
+                    <input type="text" id="lr-descricao" required>
+                    <label>Descrição</label>
+                </div>
+                <div class="fl-group">
+                    <input type="text" id="lr-valor" placeholder="0,00" required>
+                    <label>Valor (R$)</label>
+                </div>
+                <div class="fl-group">
+                    <input type="date" id="lr-data" required>
+                    <label>Data</label>
+                </div>
+                <div class="fl-group">
+                    <select id="lr-dono" class="form-control"></select>
+                    <label>Responsável</label>
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:.875rem">
+                    <input type="checkbox" id="lr-parcelado"> É parcelado?
+                </label>
+                <div id="lr-campos-parcela" style="display:none;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="fl-group mb-0">
+                        <input type="number" id="lr-parcela-atual" value="1" min="1">
+                        <label>Parcela Atual</label>
+                    </div>
+                    <div class="fl-group mb-0">
+                        <input type="number" id="lr-total-parcelas" value="1" min="1">
+                        <label>Total Parcelas</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="fecharModal('modalLancamentoRapido')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-    <!-- Firebase SDK Compat -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+<!-- UI global -->
+<div id="loadingOverlay"><div class="spinner"></div></div>
+<div id="toastContainer"></div>
 
-    <!-- App Scripts -->
-    <script src="js/firebase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/relatorios.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/relatorios.js"></script>
 
-    <script>
-        verificarAuth(async (user) => {
-            inicializarAvatar(user);
-            await inicializarPaginaRelatorios();
-        });
-    </script>
+<script>
+    verificarAuth(async (user) => {
+        inicializarAvatar(user);
+        await inicializarPaginaRelatorios();
+    });
+</script>
 </body>
 </html>

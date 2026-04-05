@@ -5,22 +5,30 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "fatura_id", "order": "ASCENDING" },
-        { "fieldPath": "data", "order": "ASCENDING" }
+        { "fieldPath": "data",      "order": "ASCENDING" }
       ]
     },
     {
       "collectionGroup": "lancamentos",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "mes", "order": "ASCENDING" },
+        { "fieldPath": "mes",  "order": "ASCENDING" },
         { "fieldPath": "data", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "faturas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cartao_id", "order": "ASCENDING" },
+        { "fieldPath": "mes",       "order": "ASCENDING" }
       ]
     },
     {
       "collectionGroup": "receitas",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "mes", "order": "ASCENDING" },
+        { "fieldPath": "mes",  "order": "ASCENDING" },
         { "fieldPath": "data", "order": "ASCENDING" }
       ]
     },
@@ -28,8 +36,16 @@
       "collectionGroup": "despesas_fixas",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "ativa", "order": "ASCENDING" },
+        { "fieldPath": "ativa",          "order": "ASCENDING" },
         { "fieldPath": "dia_vencimento", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "despesas_pagas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "mes",            "order": "ASCENDING" },
+        { "fieldPath": "despesa_fixa_id","order": "ASCENDING" }
       ]
     }
   ],
