@@ -13,14 +13,14 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">SmartFinanças</div>
         <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
-            <a href="receitas.html"  class="nav-item">📈 Receitas</a>
-            <a href="despesas.html"  class="nav-item active">📉 Despesas fixas</a>
-            <a href="cartoes.html"   class="nav-item">💳 Cartões</a>
-            <a href="faturas.html"   class="nav-item">📄 Importar Faturas</a>
-            <a href="parcelamentos.html" class="nav-item">⏳ Parcelamentos</a>
-            <a href="relatorios.html"    class="nav-item">📊 Relatórios/Cobrança</a>
-            <a href="pessoas.html"   class="nav-item">👥 Pessoas</a>
+            <a href="dashboard.html"     class="nav-item">&#127968; Dashboard</a>
+            <a href="receitas.html"      class="nav-item">&#128200; Receitas</a>
+            <a href="despesas.html"      class="nav-item active">&#128201; Despesas fixas</a>
+            <a href="cartoes.html"       class="nav-item">&#128179; Cart&#245;es</a>
+            <a href="faturas.html"       class="nav-item">&#128196; Importar Faturas</a>
+            <a href="parcelamentos.html" class="nav-item">&#9203; Parcelamentos</a>
+            <a href="relatorios.html"    class="nav-item">&#128202; Relat&#243;rios/Cobran&#231;a</a>
+            <a href="pessoas.html"       class="nav-item">&#128101; Pessoas</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-profile">
@@ -39,13 +39,18 @@
     <main class="main-content">
         <header class="page-header">
             <div class="page-title">
-                <button id="hamburger" class="btn btn-ghost">☰</button>
+                <button id="hamburger" class="btn btn-ghost">&#9776;</button>
                 <h1>Despesas Fixas</h1>
             </div>
-            <div class="month-selector">
-                <button class="month-nav" id="prevMonth">‹</button>
-                <span id="monthDisplay">...</span>
-                <button class="month-nav" id="nextMonth">›</button>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm" onclick="abrirGerenciarCategorias()">
+                    + Gerenciar Categorias
+                </button>
+                <div class="month-selector">
+                    <button class="month-nav" id="prevMonth">&#8249;</button>
+                    <span id="monthDisplay">...</span>
+                    <button class="month-nav" id="nextMonth">&#8250;</button>
+                </div>
             </div>
         </header>
 
@@ -53,10 +58,10 @@
         <div class="card mb-6">
             <h3 class="mb-4">Cadastrar Despesa Fixa</h3>
             <form id="formDespesa" class="stats-grid"
-                  style="grid-template-columns: 2fr 1fr 1fr 1.5fr auto; align-items: end;">
+                  style="grid-template-columns:2fr 1fr 1fr 1.5fr auto;align-items:end">
                 <div class="fl-group mb-0">
                     <input type="text" id="desp-descricao" required>
-                    <label>Descrição</label>
+                    <label>Descri&#231;&#227;o</label>
                 </div>
                 <div class="fl-group mb-0">
                     <input type="text" id="desp-valor" placeholder="0,00" required>
@@ -68,65 +73,89 @@
                 </div>
                 <div class="fl-group mb-0">
                     <select id="desp-categoria" class="form-control" required>
-                        <option value="">— Categoria —</option>
-                        <option value="Moradia">🏠 Moradia</option>
-                        <option value="Serviços">⚡ Serviços</option>
-                        <option value="Lazer">🎬 Lazer</option>
-                        <option value="Saúde">🏥 Saúde</option>
-                        <option value="Educação">🎓 Educação</option>
-                        <option value="Outros">⚙️ Outros</option>
+                        <option value="">&#8212; Categoria &#8212;</option>
                     </select>
                     <label>Categoria</label>
                 </div>
-                <button type="submit" class="btn btn-primary" style="height:52px;white-space:nowrap">
-                    + Salvar
-                </button>
+                <button type="submit" class="btn btn-primary"
+                        style="height:52px;white-space:nowrap">+ Salvar</button>
             </form>
         </div>
 
         <!-- Listagem -->
         <div class="card">
             <div class="flex-between mb-4">
-                <h3>Status do Mês</h3>
-                <div class="stat-value valor-negativo" id="totalMesDesp" style="font-size:1.25rem">R$ 0,00</div>
+                <h3>Status do M&#234;s</h3>
+                <div class="stat-value valor-negativo" id="totalMesDesp"
+                     style="font-size:1.25rem">R$ 0,00</div>
             </div>
             <div class="table-wrap">
                 <table class="table">
                     <thead>
                         <tr>
                             <th>Dia</th>
-                            <th>Descrição / Categoria</th>
+                            <th>Descri&#231;&#227;o / Categoria</th>
                             <th>Status</th>
                             <th style="text-align:right">Valor</th>
-                            <th style="text-align:right">Ações</th>
+                            <th style="text-align:right">A&#231;&#245;es</th>
                         </tr>
                     </thead>
                     <tbody id="tbodyDespesas"></tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Gerenciar Categorias (painel inline, oculto por padrão) -->
+        <div id="painelCategorias" class="card mt-4" style="display:none">
+            <div class="flex-between mb-4">
+                <h3>Gerenciar Categorias</h3>
+                <button class="btn btn-ghost btn-sm"
+                        onclick="document.getElementById('painelCategorias').style.display='none'">
+                    &#10005; Fechar
+                </button>
+            </div>
+
+            <!-- Adicionar nova -->
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+                <div class="fl-group mb-0" style="flex:1;min-width:160px">
+                    <input type="text" id="cat-nome" placeholder="Ex: Transporte">
+                    <label>Nome da Categoria</label>
+                </div>
+                <div class="fl-group mb-0" style="width:100px">
+                    <input type="text" id="cat-icone" placeholder="Ex: &#128652;" maxlength="4">
+                    <label>&#205;cone (emoji)</label>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="adicionarCategoria()"
+                        style="height:50px;white-space:nowrap">+ Adicionar</button>
+            </div>
+
+            <!-- Lista de categorias -->
+            <div id="listaCategorias">
+                <p class="empty-state">Carregando...</p>
+            </div>
+        </div>
     </main>
 </div>
 
 <!-- FAB -->
-<button class="fab" id="fabBtn" title="Novo lançamento rápido">+</button>
+<button class="fab" id="fabBtn" title="Novo lan&#231;amento r&#225;pido">+</button>
 
-<!-- Modal: Lançamento Rápido -->
+<!-- Modal: Lan&#231;amento R&#225;pido -->
 <div class="modal-wrapper" id="modalLancamentoRapido">
     <div class="modal-overlay"></div>
     <div class="modal-box">
         <form id="formLancamentoRapido">
             <div class="modal-header">
-                <h3 class="modal-title">Novo Lançamento</h3>
+                <h3 class="modal-title">Novo Lan&#231;amento</h3>
             </div>
             <div class="modal-body">
                 <div class="fl-group">
                     <select id="lr-cartao" class="form-control" required></select>
-                    <label>Cartão</label>
+                    <label>Cart&#227;o</label>
                 </div>
                 <div class="fl-group">
                     <input type="text" id="lr-descricao" required>
-                    <label>Descrição</label>
+                    <label>Descri&#231;&#227;o</label>
                 </div>
                 <div class="fl-group">
                     <input type="text" id="lr-valor" placeholder="0,00" required>
@@ -138,12 +167,13 @@
                 </div>
                 <div class="fl-group">
                     <select id="lr-dono" class="form-control"></select>
-                    <label>Responsável</label>
+                    <label>Respons&#225;vel</label>
                 </div>
                 <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:.875rem">
-                    <input type="checkbox" id="lr-parcelado"> É parcelado?
+                    <input type="checkbox" id="lr-parcelado"> &#201; parcelado?
                 </label>
-                <div id="lr-campos-parcela" style="display:none;grid-template-columns:1fr 1fr;gap:12px">
+                <div id="lr-campos-parcela"
+                     style="display:none;grid-template-columns:1fr 1fr;gap:12px">
                     <div class="fl-group mb-0">
                         <input type="number" id="lr-parcela-atual" value="1" min="1">
                         <label>Parcela Atual</label>
@@ -155,7 +185,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-ghost" onclick="fecharModal('modalLancamentoRapido')">Cancelar</button>
+                <button type="button" class="btn btn-ghost"
+                        onclick="fecharModal('modalLancamentoRapido')">Cancelar</button>
                 <button type="submit" class="btn btn-primary">Salvar</button>
             </div>
         </form>
@@ -176,146 +207,312 @@
 <script src="js/app.js"></script>
 
 <script>
-    verificarAuth(async (user) => {
-        inicializarAvatar(user);
-        inicializarSeletorMes(mes => carregarDespesas(mes));
+// ── Categorias padrão (usadas só na primeira vez) ──────────────
+const CATEGORIAS_PADRAO = [
+    { nome: 'Moradia',    icone: '' },
+    { nome: 'Servicos',   icone: '' },
+    { nome: 'Lazer',      icone: '' },
+    { nome: 'Saude',      icone: '' },
+    { nome: 'Educacao',   icone: '' },
+    { nome: 'Transporte', icone: '' },
+    { nome: 'Outros',     icone: '' }
+];
 
-        document.getElementById('formDespesa').addEventListener('submit', salvarDespesa);
+let categoriasCache = [];
 
-        // Registra hook de recarregamento para o FAB
-        window._recarregarPagina = (mes) => carregarDespesas(mes);
+// ──────────────────────────────────────────────────────────────
+verificarAuth(async (user) => {
+    inicializarAvatar(user);
+    inicializarSeletorMes(mes => carregarDespesas(mes));
 
-        await carregarDespesas(mesSelecionado);
-    });
+    document.getElementById('formDespesa').addEventListener('submit', salvarDespesa);
+    window._recarregarPagina = (mes) => carregarDespesas(mes);
 
-    async function carregarDespesas(mes) {
-        mostrarLoading(true);
-        const tbody   = document.getElementById('tbodyDespesas');
-        const totalEl = document.getElementById('totalMesDesp');
+    await carregarCategorias();
+    await carregarDespesas(mesSelecionado);
+});
 
-        try {
-            // Busca despesas fixas ativas
-            const snapDesp = await colecaoUsuario('despesas_fixas')
-                .where('ativa', '==', true)
-                .orderBy('dia_vencimento', 'asc')
-                .get();
+// ══════════════════════════════════════════════════════════════
+// CATEGORIAS
+// ══════════════════════════════════════════════════════════════
 
-            // Busca pagamentos já realizados neste mês
-            const snapPagos = await colecaoUsuario('despesas_pagas')
-                .where('mes', '==', mes)
-                .get();
+async function carregarCategorias() {
+    try {
+        const snap = await colecaoUsuario('categorias').orderBy('nome').get();
 
-            const pagas = Object.fromEntries(
-                snapPagos.docs.map(d => [d.data().despesa_fixa_id, { id: d.id, ...d.data() }])
-            );
-
-            let total = 0;
-            tbody.innerHTML = '';
-
-            if (snapDesp.empty) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhuma despesa fixa cadastrada.</td></tr>';
-                totalEl.textContent = formatarMoeda(0);
-                return;
-            }
-
-            snapDesp.forEach(doc => {
-                const d  = doc.data();
-                const pg = pagas[doc.id];
-                total += d.valor;
-
-                const statusBadge = pg?.pago
-                    ? '<span class="badge badge-success">Paga</span>'
-                    : '<span class="badge badge-warning">Pendente</span>';
-
-                const actionBtn = pg?.pago
-                    ? `<button class="btn btn-sm btn-ghost" onclick="togglePago('${doc.id}','${pg.id}',false)">Desfazer</button>`
-                    : `<button class="btn btn-sm btn-outline" onclick="togglePago('${doc.id}','',true)">Marcar paga</button>`;
-
-                tbody.innerHTML += `
-                    <tr class="${pg?.pago ? 'item-pago' : ''}">
-                        <td class="mono">Dia ${String(d.dia_vencimento).padStart(2,'0')}</td>
-                        <td>
-                            <div style="font-weight:600">${d.descricao}</div>
-                            <div class="text-muted small">${d.categoria}</div>
-                        </td>
-                        <td>${statusBadge}</td>
-                        <td class="mono valor-negativo" style="text-align:right">${formatarMoeda(d.valor)}</td>
-                        <td style="text-align:right;display:flex;gap:6px;justify-content:flex-end">
-                            ${actionBtn}
-                            <button class="btn btn-sm btn-ghost" onclick="excluirDespesa('${doc.id}')">✕</button>
-                        </td>
-                    </tr>`;
+        // Seed padrão na primeira vez
+        if (snap.empty) {
+            const batch = db.batch();
+            const userRef = db.collection('usuarios').doc(auth.currentUser.uid);
+            const ts = firebase.firestore.FieldValue.serverTimestamp();
+            CATEGORIAS_PADRAO.forEach(c => {
+                batch.set(userRef.collection('categorias').doc(), { ...c, criado_em: ts });
             });
-
-            totalEl.textContent = formatarMoeda(total);
-
-        } catch (err) {
-            console.error('[Despesas] Erro:', err);
-            mostrarToast('Erro ao carregar despesas.', 'erro');
-        } finally {
-            mostrarLoading(false);
+            await batch.commit();
+            return carregarCategorias(); // Recarrega após seed
         }
+
+        categoriasCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        popularSelectCategoria();
+    } catch (err) {
+        console.error('[Categorias] Erro:', err);
+    }
+}
+
+function popularSelectCategoria() {
+    const sel = document.getElementById('desp-categoria');
+    if (!sel) return;
+    const valorAtual = sel.value;
+    sel.innerHTML = '<option value="">— Categoria —</option>';
+    categoriasCache.forEach(c => {
+        const label = c.icone ? `${c.icone} ${c.nome}` : c.nome;
+        sel.innerHTML += `<option value="${c.nome}">${label}</option>`;
+    });
+    if (valorAtual) sel.value = valorAtual;
+}
+
+function abrirGerenciarCategorias() {
+    const painel = document.getElementById('painelCategorias');
+    painel.style.display = 'block';
+    painel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    renderizarListaCategorias();
+}
+
+function renderizarListaCategorias() {
+    const lista = document.getElementById('listaCategorias');
+    if (!lista) return;
+
+    if (!categoriasCache.length) {
+        lista.innerHTML = '<p class="empty-state">Nenhuma categoria cadastrada.</p>';
+        return;
     }
 
-    async function salvarDespesa(e) {
-        e.preventDefault();
-        const desc     = document.getElementById('desp-descricao').value.trim();
-        const valorStr = document.getElementById('desp-valor').value;
-        const venc     = parseInt(document.getElementById('desp-vencimento').value);
-        const cat      = document.getElementById('desp-categoria').value;
-        const valor    = parseFloat(valorStr.replace(',', '.'));
+    lista.innerHTML = `
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ícone</th>
+                    <th>Nome</th>
+                    <th style="text-align:right">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${categoriasCache.map(c => `
+                    <tr>
+                        <td style="width:60px;font-size:1.3rem;text-align:center">
+                            ${c.icone || '—'}
+                        </td>
+                        <td id="nome-cat-${c.id}">${c.nome}</td>
+                        <td style="text-align:right;display:flex;gap:6px;justify-content:flex-end">
+                            <button class="btn btn-sm btn-ghost"
+                                onclick="editarCategoria('${c.id}')">&#9998; Editar</button>
+                            <button class="btn btn-sm btn-danger"
+                                onclick="excluirCategoria('${c.id}','${c.nome}')">&#10005;</button>
+                        </td>
+                    </tr>`).join('')}
+            </tbody>
+        </table>`;
+}
 
-        if (!desc || isNaN(valor) || valor <= 0 || isNaN(venc) || !cat) {
-            mostrarToast('Preencha todos os campos.', 'aviso');
+async function adicionarCategoria() {
+    const nome  = document.getElementById('cat-nome').value.trim();
+    const icone = document.getElementById('cat-icone').value.trim();
+
+    if (!nome) { mostrarToast('Digite o nome da categoria.', 'aviso'); return; }
+
+    // Verifica duplicata
+    if (categoriasCache.some(c => c.nome.toLowerCase() === nome.toLowerCase())) {
+        mostrarToast('Categoria já existe.', 'aviso'); return;
+    }
+
+    try {
+        await colecaoUsuario('categorias').add({
+            nome,
+            icone,
+            criado_em: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById('cat-nome').value  = '';
+        document.getElementById('cat-icone').value = '';
+        mostrarToast('Categoria adicionada!', 'sucesso');
+        await carregarCategorias();
+        renderizarListaCategorias();
+    } catch (err) {
+        mostrarToast('Erro ao adicionar categoria.', 'erro');
+    }
+}
+
+function editarCategoria(id) {
+    const cat = categoriasCache.find(c => c.id === id);
+    if (!cat) return;
+
+    const novoNome  = prompt('Nome da categoria:', cat.nome);
+    if (novoNome === null) return; // Cancelou
+    const novoIcone = prompt('Ícone (emoji, deixe vazio para remover):', cat.icone || '');
+
+    if (!novoNome.trim()) { mostrarToast('Nome não pode ser vazio.', 'aviso'); return; }
+
+    colecaoUsuario('categorias').doc(id).update({
+        nome : novoNome.trim(),
+        icone: novoIcone?.trim() || ''
+    }).then(async () => {
+        mostrarToast('Categoria atualizada!', 'sucesso');
+        await carregarCategorias();
+        renderizarListaCategorias();
+    }).catch(() => mostrarToast('Erro ao atualizar.', 'erro'));
+}
+
+async function excluirCategoria(id, nome) {
+    confirmarExclusao(
+        `Excluir a categoria "${nome}"? As despesas que já usam esta categoria não serão alteradas.`,
+        async () => {
+            try {
+                await colecaoUsuario('categorias').doc(id).delete();
+                mostrarToast('Categoria removida.', 'sucesso');
+                await carregarCategorias();
+                renderizarListaCategorias();
+            } catch (err) {
+                mostrarToast('Erro ao excluir categoria.', 'erro');
+            }
+        }
+    );
+}
+
+// ══════════════════════════════════════════════════════════════
+// DESPESAS
+// ══════════════════════════════════════════════════════════════
+
+async function carregarDespesas(mes) {
+    mostrarLoading(true);
+    const tbody   = document.getElementById('tbodyDespesas');
+    const totalEl = document.getElementById('totalMesDesp');
+
+    try {
+        const [snapDesp, snapPagos] = await Promise.all([
+            colecaoUsuario('despesas_fixas')
+                .where('ativa', '==', true)
+                .orderBy('dia_vencimento', 'asc')
+                .get(),
+            colecaoUsuario('despesas_pagas')
+                .where('mes', '==', mes)
+                .get()
+        ]);
+
+        const pagas = Object.fromEntries(
+            snapPagos.docs.map(d => [d.data().despesa_fixa_id, { id: d.id, ...d.data() }])
+        );
+
+        let total = 0;
+        tbody.innerHTML = '';
+
+        if (snapDesp.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhuma despesa fixa cadastrada.</td></tr>';
+            totalEl.textContent = formatarMoeda(0);
             return;
         }
 
-        mostrarLoading(true);
-        try {
-            await colecaoUsuario('despesas_fixas').add({
-                descricao     : desc,
-                valor,
-                dia_vencimento: venc,
-                categoria     : cat,
-                ativa         : true,
-                criado_em     : firebase.firestore.FieldValue.serverTimestamp()
+        snapDesp.forEach(doc => {
+            const d  = doc.data();
+            const pg = pagas[doc.id];
+            total += d.valor;
+
+            const statusBadge = pg?.pago
+                ? '<span class="badge badge-success">Paga</span>'
+                : '<span class="badge badge-warning">Pendente</span>';
+
+            const actionBtn = pg?.pago
+                ? `<button class="btn btn-sm btn-ghost"
+                       onclick="togglePago('${doc.id}','${pg.id}',false)">Desfazer</button>`
+                : `<button class="btn btn-sm btn-outline"
+                       onclick="togglePago('${doc.id}','',true)">Marcar paga</button>`;
+
+            tbody.innerHTML += `
+                <tr class="${pg?.pago ? 'item-pago' : ''}">
+                    <td class="mono">Dia ${String(d.dia_vencimento).padStart(2, '0')}</td>
+                    <td>
+                        <div style="font-weight:600">${d.descricao}</div>
+                        <div class="text-muted small">${d.categoria || '—'}</div>
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td class="mono valor-negativo" style="text-align:right">
+                        ${formatarMoeda(d.valor)}
+                    </td>
+                    <td style="text-align:right;display:flex;gap:6px;justify-content:flex-end">
+                        ${actionBtn}
+                        <button class="btn btn-sm btn-ghost"
+                            onclick="excluirDespesa('${doc.id}')">&#10005;</button>
+                    </td>
+                </tr>`;
+        });
+
+        totalEl.textContent = formatarMoeda(total);
+
+    } catch (err) {
+        console.error('[Despesas] Erro:', err);
+        mostrarToast('Erro ao carregar despesas.', 'erro');
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+async function salvarDespesa(e) {
+    e.preventDefault();
+    const desc     = document.getElementById('desp-descricao').value.trim();
+    const valorStr = document.getElementById('desp-valor').value;
+    const venc     = parseInt(document.getElementById('desp-vencimento').value);
+    const cat      = document.getElementById('desp-categoria').value;
+    const valor    = parseFloat(valorStr.replace(',', '.'));
+
+    if (!desc || isNaN(valor) || valor <= 0 || isNaN(venc) || !cat) {
+        mostrarToast('Preencha todos os campos.', 'aviso'); return;
+    }
+
+    mostrarLoading(true);
+    try {
+        await colecaoUsuario('despesas_fixas').add({
+            descricao     : desc,
+            valor,
+            dia_vencimento: venc,
+            categoria     : cat,
+            ativa         : true,
+            criado_em     : firebase.firestore.FieldValue.serverTimestamp()
+        });
+        mostrarToast('Despesa cadastrada!', 'sucesso');
+        document.getElementById('formDespesa').reset();
+        await carregarDespesas(mesSelecionado);
+    } catch (err) {
+        mostrarToast('Erro ao salvar despesa.', 'erro');
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+async function togglePago(despesaId, pagamentoId, pago) {
+    mostrarLoading(true);
+    try {
+        if (pago) {
+            await colecaoUsuario('despesas_pagas').add({
+                despesa_fixa_id: despesaId,
+                mes            : mesSelecionado,
+                pago           : true,
+                pago_em        : firebase.firestore.FieldValue.serverTimestamp()
             });
-            mostrarToast('Despesa cadastrada!', 'sucesso');
-            document.getElementById('formDespesa').reset();
-            await carregarDespesas(mesSelecionado);
-        } catch (err) {
-            console.error('[Despesas] Erro ao salvar:', err);
-            mostrarToast('Erro ao salvar despesa.', 'erro');
-        } finally {
-            mostrarLoading(false);
+            mostrarToast('Despesa marcada como paga!', 'sucesso');
+        } else {
+            await colecaoUsuario('despesas_pagas').doc(pagamentoId).delete();
+            mostrarToast('Status revertido para pendente.', 'info');
         }
+        await carregarDespesas(mesSelecionado);
+    } catch (err) {
+        mostrarToast('Erro ao atualizar status.', 'erro');
+    } finally {
+        mostrarLoading(false);
     }
+}
 
-    async function togglePago(despesaId, pagamentoId, pago) {
-        mostrarLoading(true);
-        try {
-            if (pago) {
-                await colecaoUsuario('despesas_pagas').add({
-                    despesa_fixa_id: despesaId,
-                    mes            : mesSelecionado,
-                    pago           : true,
-                    pago_em        : firebase.firestore.FieldValue.serverTimestamp()
-                });
-                mostrarToast('Despesa marcada como paga!', 'sucesso');
-            } else {
-                await colecaoUsuario('despesas_pagas').doc(pagamentoId).delete();
-                mostrarToast('Status revertido para pendente.', 'info');
-            }
-            await carregarDespesas(mesSelecionado);
-        } catch (err) {
-            mostrarToast('Erro ao atualizar status.', 'erro');
-        } finally {
-            mostrarLoading(false);
-        }
-    }
-
-    async function excluirDespesa(id) {
-        confirmarExclusao('Desativar esta despesa fixa? Ela não aparecerá mais nos próximos meses.', async () => {
+async function excluirDespesa(id) {
+    confirmarExclusao(
+        'Desativar esta despesa fixa? Ela não aparecerá mais nos próximos meses.',
+        async () => {
             mostrarLoading(true);
             try {
                 await colecaoUsuario('despesas_fixas').doc(id).update({ ativa: false });
@@ -326,8 +523,9 @@
             } finally {
                 mostrarLoading(false);
             }
-        });
-    }
+        }
+    );
+}
 </script>
 </body>
 </html>
