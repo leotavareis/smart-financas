@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Finanças Pessoais</title>
+    <title>Dashboard | FinanÃ§as Pessoais</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,17 +11,17 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <span style="color:var(--primary)">$</span>martFin
+                SmartFinanças
             </div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item active">🏠 Dashboard</a>
-                <a href="receitas.html" class="nav-item">📈 Receitas</a>
-                <a href="despesas.html" class="nav-item">📉 Despesas fixas</a>
-                <a href="cartoes.html" class="nav-item">💳 Cartões</a>
-                <a href="faturas.html" class="nav-item">📄 Importar Faturas</a>
-                <a href="parcelamentos.html" class="nav-item">⏳ Parcelamentos</a>
-                <a href="relatorios.html" class="nav-item">📊 Relatórios/Cobrança</a>
-                <a href="pessoas.html" class="nav-item">👥 Pessoas</a>
+                <a href="dashboard.html" class="nav-item active">ðŸ  Dashboard</a>
+                <a href="receitas.html" class="nav-item">ðŸ“ˆ Receitas</a>
+                <a href="despesas.html" class="nav-item">ðŸ“‰ Despesas fixas</a>
+                <a href="cartoes.html" class="nav-item">ðŸ’³ CartÃµes</a>
+                <a href="faturas.html" class="nav-item">ðŸ“„ Importar Faturas</a>
+                <a href="parcelamentos.html" class="nav-item">â³ Parcelamentos</a>
+                <a href="relatorios.html" class="nav-item">ðŸ“Š RelatÃ³rios/CobranÃ§a</a>
+                <a href="pessoas.html" class="nav-item">ðŸ‘¥ Pessoas</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -41,13 +41,13 @@
         <main class="main-content">
             <header class="page-header">
                 <div class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">☰</button>
+                    <button id="hamburger" class="btn btn-ghost">â˜°</button>
                     <h1>Dashboard</h1>
                 </div>
                 <div class="month-selector">
-                    <button class="month-nav" id="prevMonth">‹</button>
+                    <button class="month-nav" id="prevMonth">â€¹</button>
                     <span id="monthDisplay">...</span>
-                    <button class="month-nav" id="nextMonth">›</button>
+                    <button class="month-nav" id="nextMonth">â€º</button>
                 </div>
             </header>
 
@@ -67,25 +67,25 @@
                 </div>
             </div>
 
-            <!-- Gráfico -->
+            <!-- GrÃ¡fico -->
             <div class="chart-container">
                 <div class="relatorio-header flex-between mb-4">
                     <h3>Receitas x Despesas</h3>
-                    <span class="text-muted small">Últimos 6 meses</span>
+                    <span class="text-muted small">Ãšltimos 6 meses</span>
                 </div>
                 <canvas id="canvasGrafico" width="800" height="300"></canvas>
             </div>
 
             <div class="stats-grid">
-                <!-- Faturas Próximas do Vencimento (próximos 5 dias) -->
+                <!-- Faturas PrÃ³ximas do Vencimento (prÃ³ximos 5 dias) -->
                 <div class="card">
-                    <h3 class="mb-4">💳 Alertas de Fatura</h3>
+                    <h3 class="mb-4">ðŸ’³ Alertas de Fatura</h3>
                     <div id="listaAlertasFatura"></div>
                 </div>
 
                 <!-- Resumo de Parcelas Ativas -->
                 <div class="card">
-                    <h3 class="mb-4">⏳ Resumo de Parcelas</h3>
+                    <h3 class="mb-4">â³ Resumo de Parcelas</h3>
                     <div id="listaResumoParcelas"></div>
                 </div>
             </div>
@@ -95,22 +95,22 @@
     <!-- Floating Action Button -->
     <button class="fab" id="fabBtn">+</button>
 
-    <!-- Modal Lançamento Rápido -->
+    <!-- Modal LanÃ§amento RÃ¡pido -->
     <div class="modal-wrapper" id="modalLancamentoRapido">
         <div class="modal-overlay"></div>
         <div class="modal-box">
             <form id="formLancamentoRapido">
                 <div class="modal-header">
-                    <h3 class="modal-title">Novo Lançamento</h3>
+                    <h3 class="modal-title">Novo LanÃ§amento</h3>
                 </div>
                 <div class="modal-body">
                     <div class="fl-group">
                         <select id="lr-cartao" class="form-control" required></select>
-                        <label>Cartão</label>
+                        <label>CartÃ£o</label>
                     </div>
                     <div class="fl-group">
                         <input type="text" id="lr-descricao" required>
-                        <label>Descrição</label>
+                        <label>DescriÃ§Ã£o</label>
                     </div>
                     <div class="fl-group">
                         <input type="text" id="lr-valor" placeholder="0,00" required>
@@ -127,7 +127,7 @@
                     
                     <label class="checkbox-container" style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
                         <input type="checkbox" id="lr-parcelado"> 
-                        <span style="font-size:0.875rem">É parcelado?</span>
+                        <span style="font-size:0.875rem">Ã‰ parcelado?</span>
                     </label>
 
                     <div id="lr-campos-parcela" style="display:none;grid-template-columns:1fr 1fr;gap:12px">
@@ -182,7 +182,7 @@
                 const snapDesp = await colecaoUsuario('despesas_fixas').where('ativa', '==', true).get();
                 const totalDespFixas = snapDesp.docs.reduce((s,d) => s + (d.data().valor || 0), 0);
 
-                // 3. Faturas (Total de gastos em cartão no mês)
+                // 3. Faturas (Total de gastos em cartÃ£o no mÃªs)
                 const snapFaturas = await colecaoUsuario('faturas').where('mes', '==', mes).get();
                 const totalFaturas = snapFaturas.docs.reduce((s,d) => s + (d.data().total || 0), 0);
 
@@ -194,18 +194,18 @@
                 document.getElementById('saldoLivre').textContent = formatarMoeda(saldoLivre);
                 document.getElementById('saldoLivre').className = 'stat-value ' + (saldoLivre >= 0 ? 'valor-positivo' : 'valor-negativo');
 
-                // 4. Alertas de faturas próximas (vencimento em 5 dias)
+                // 4. Alertas de faturas prÃ³ximas (vencimento em 5 dias)
                 await carregarAlertasFaturas();
 
                 // 5. Resumo de parcelas
                 await carregarResumoParcelas();
 
-                // 6. Gráfico (últimos 6 meses)
+                // 6. GrÃ¡fico (Ãºltimos 6 meses)
                 await carregarGraficoGeral();
 
             } catch (err) {
                 console.error('[Dashboard] Erro:', err);
-                mostrarToast('Erro ao carregar dados do mês.', 'erro');
+                mostrarToast('Erro ao carregar dados do mÃªs.', 'erro');
             } finally {
                 mostrarLoading(false);
             }
@@ -219,7 +219,7 @@
             const hoje = new Date();
             const em5Dias = new Date(); em5Dias.setDate(hoje.getDate() + 5);
             
-            // Busca faturas abertas do mês atual e seguinte
+            // Busca faturas abertas do mÃªs atual e seguinte
             const snapFaturas = await colecaoUsuario('faturas')
                 .where('status', '==', 'aberta')
                 .get();
@@ -230,7 +230,7 @@
                 const c = cartoes[f.cartao_id];
                 if (!c) return;
 
-                // Calcula data de vencimento baseada no dia_vencimento do cartão e no mês da fatura
+                // Calcula data de vencimento baseada no dia_vencimento do cartÃ£o e no mÃªs da fatura
                 const [ano, mes] = f.mes.split('-').map(Number);
                 const venc = new Date(ano, mes - 1, c.dia_vencimento);
                 
@@ -240,7 +240,7 @@
             });
 
             if (alertas.length === 0) {
-                container.innerHTML = '<p class="text-muted small">Nenhuma fatura vencendo nos próximos 5 dias.</p>';
+                container.innerHTML = '<p class="text-muted small">Nenhuma fatura vencendo nos prÃ³ximos 5 dias.</p>';
                 return;
             }
 
@@ -288,12 +288,12 @@
             const receitas = [];
             const despesas = [];
 
-            // Gera labels para últimos 6 meses
+            // Gera labels para Ãºltimos 6 meses
             for (let i = 5; i >= 0; i--) {
                 const mStr = deslocarMes(getMesAtual(), -i);
                 labels.push(formatarMes(mStr).split(' ')[0]);
                 
-                // Busca em paralelo para cada mês
+                // Busca em paralelo para cada mÃªs
                 const snapRec = await colecaoUsuario('receitas').where('mes', '==', mStr).get();
                 const totalRec = snapRec.docs.reduce((s,d) => s + (d.data().valor || 0), 0);
                 

@@ -1,25 +1,25 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pessoas | Finanças Pessoais</title>
+    <title>Pessoas | FinanÃ§as Pessoais</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo"><span style="color:var(--primary)">$</span>martFin</div>
+            <div class="sidebar-logo">SmartFinanças</div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
-                <a href="receitas.html" class="nav-item">📈 Receitas</a>
-                <a href="despesas.html" class="nav-item">📉 Despesas fixas</a>
-                <a href="cartoes.html" class="nav-item">💳 Cartões</a>
-                <a href="faturas.html" class="nav-item">📄 Importar Faturas</a>
-                <a href="parcelamentos.html" class="nav-item">⏳ Parcelamentos</a>
-                <a href="relatorios.html" class="nav-item">📊 Relatórios/Cobrança</a>
-                <a href="pessoas.html" class="nav-item active">👥 Pessoas</a>
+                <a href="dashboard.html" class="nav-item">ðŸ  Dashboard</a>
+                <a href="receitas.html" class="nav-item">ðŸ“ˆ Receitas</a>
+                <a href="despesas.html" class="nav-item">ðŸ“‰ Despesas fixas</a>
+                <a href="cartoes.html" class="nav-item">ðŸ’³ CartÃµes</a>
+                <a href="faturas.html" class="nav-item">ðŸ“„ Importar Faturas</a>
+                <a href="parcelamentos.html" class="nav-item">â³ Parcelamentos</a>
+                <a href="relatorios.html" class="nav-item">ðŸ“Š RelatÃ³rios/CobranÃ§a</a>
+                <a href="pessoas.html" class="nav-item active">ðŸ‘¥ Pessoas</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -39,7 +39,7 @@
         <main class="main-content">
             <header class="page-header">
                 <div class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">☰</button>
+                    <button id="hamburger" class="btn btn-ghost">â˜°</button>
                     <h1>Gerenciar Pessoas</h1>
                 </div>
                 <button class="btn btn-primary" onclick="abrirModalPessoa()">+ Adicionar Pessoa</button>
@@ -65,7 +65,7 @@
                             </div>
                             <div class="fl-group">
                                 <input type="color" id="p-cor" style="height:50px; padding:4px">
-                                <label>Cor de Identificação</label>
+                                <label>Cor de IdentificaÃ§Ã£o</label>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -128,8 +128,8 @@
                                 <div class="text-muted small">Membro do rateio</div>
                             </div>
                             <div style="display:flex; gap:8px">
-                                <button class="btn btn-sm btn-ghost" onclick="editarPessoa('${doc.id}', ${JSON.stringify(p).replace(/"/g, '&quot;')})">✎</button>
-                                <button class="btn btn-sm btn-ghost" onclick="excluirPessoa('${doc.id}')">✕</button>
+                                <button class="btn btn-sm btn-ghost" onclick="editarPessoa('${doc.id}', ${JSON.stringify(p).replace(/"/g, '&quot;')})">âœŽ</button>
+                                <button class="btn btn-sm btn-ghost" onclick="excluirPessoa('${doc.id}')">âœ•</button>
                             </div>
                         </div>
                     `;
@@ -168,7 +168,7 @@
             const cor = document.getElementById('p-cor').value;
 
             if (!nome) {
-                mostrarToast('O nome é obrigatório.', 'aviso');
+                mostrarToast('O nome Ã© obrigatÃ³rio.', 'aviso');
                 return;
             }
 
@@ -194,7 +194,7 @@
         }
 
         async function excluirPessoa(id) {
-            confirmarExclusao('Isso removerá a pessoa da lista, mas os lançamentos antigos dela permanecerão. Continuar?', async () => {
+            confirmarExclusao('Isso removerÃ¡ a pessoa da lista, mas os lanÃ§amentos antigos dela permanecerÃ£o. Continuar?', async () => {
                 mostrarLoading(true);
                 try {
                     await colecaoUsuario('pessoas').doc(id).delete();

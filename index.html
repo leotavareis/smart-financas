@@ -1,18 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finanças Pessoais | Login</title>
+    <title>FinanÃ§as Pessoais | Login</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="login-container">
         <div class="login-card">
             <div class="login-logo">
-                <span style="color:var(--primary)">$</span>martFin
+                SmartFinanças
             </div>
-            <p class="login-desc">Gerencie seus cartões, receitas e cobranças em um só lugar.</p>
+            <p class="login-desc">Gerencie seus cartÃµes, receitas e cobranÃ§as em um sÃ³ lugar.</p>
             
             <button class="btn btn-google" id="btnGoogleLogin">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa_google_sign_in_button.png" alt="Google" width="18">
@@ -37,10 +37,10 @@
     <script src="js/auth.js"></script>
 
     <script>
-        // Lógica da tela de login
+        // LÃ³gica da tela de login
         document.getElementById('btnGoogleLogin').addEventListener('click', loginComGoogle);
 
-        // Se já estiver logado, redireciona para o dashboard
+        // Se jÃ¡ estiver logado, redireciona para o dashboard
         auth.onAuthStateChanged(user => {
             if (user) window.location.href = 'dashboard.html';
         });

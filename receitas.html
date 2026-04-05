@@ -1,25 +1,25 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receitas | Finanças Pessoais</title>
+    <title>Receitas | FinanÃ§as Pessoais</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo"><span style="color:var(--primary)">$</span>martFin</div>
+            <div class="sidebar-logo">SmartFinanças</div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
-                <a href="receitas.html" class="nav-item active">📈 Receitas</a>
-                <a href="despesas.html" class="nav-item">📉 Despesas fixas</a>
-                <a href="cartoes.html" class="nav-item">💳 Cartões</a>
-                <a href="faturas.html" class="nav-item">📄 Importar Faturas</a>
-                <a href="parcelamentos.html" class="nav-item">⏳ Parcelamentos</a>
-                <a href="relatorios.html" class="nav-item">📊 Relatórios/Cobrança</a>
-                <a href="pessoas.html" class="nav-item">👥 Pessoas</a>
+                <a href="dashboard.html" class="nav-item">ðŸ  Dashboard</a>
+                <a href="receitas.html" class="nav-item active">ðŸ“ˆ Receitas</a>
+                <a href="despesas.html" class="nav-item">ðŸ“‰ Despesas fixas</a>
+                <a href="cartoes.html" class="nav-item">ðŸ’³ CartÃµes</a>
+                <a href="faturas.html" class="nav-item">ðŸ“„ Importar Faturas</a>
+                <a href="parcelamentos.html" class="nav-item">â³ Parcelamentos</a>
+                <a href="relatorios.html" class="nav-item">ðŸ“Š RelatÃ³rios/CobranÃ§a</a>
+                <a href="pessoas.html" class="nav-item">ðŸ‘¥ Pessoas</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -39,13 +39,13 @@
         <main class="main-content">
             <header class="page-header">
                 <div class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">☰</button>
+                    <button id="hamburger" class="btn btn-ghost">â˜°</button>
                     <h1>Receitas</h1>
                 </div>
                 <div class="month-selector">
-                    <button class="month-nav" id="prevMonth">‹</button>
+                    <button class="month-nav" id="prevMonth">â€¹</button>
                     <span id="monthDisplay">...</span>
-                    <button class="month-nav" id="nextMonth">›</button>
+                    <button class="month-nav" id="nextMonth">â€º</button>
                 </div>
             </header>
 
@@ -55,7 +55,7 @@
                 <form id="formReceita" class="stats-grid" style="grid-template-columns: 2fr 1fr 1fr auto; align-items: end;">
                     <div class="fl-group mb-0">
                         <input type="text" id="rec-descricao" required>
-                        <label>Descrição</label>
+                        <label>DescriÃ§Ã£o</label>
                     </div>
                     <div class="fl-group mb-0">
                         <input type="text" id="rec-valor" placeholder="0,00" required>
@@ -72,7 +72,7 @@
             <!-- Listagem -->
             <div class="card">
                 <div class="flex-between mb-4">
-                    <h3>Histórico do Mês</h3>
+                    <h3>HistÃ³rico do MÃªs</h3>
                     <div class="stat-value valor-positivo" id="totalMesReceitas" style="font-size: 1.25rem;">R$ 0,00</div>
                 </div>
                 
@@ -81,9 +81,9 @@
                         <thead>
                             <tr>
                                 <th>Data</th>
-                                <th>Descrição</th>
+                                <th>DescriÃ§Ã£o</th>
                                 <th style="text-align: right;">Valor</th>
-                                <th style="text-align: right;">Ações</th>
+                                <th style="text-align: right;">AÃ§Ãµes</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyReceitas">
@@ -115,7 +115,7 @@
             inicializarAvatar(user);
             inicializarSeletorMes(mes => carregarReceitas(mes));
             
-            // Data padrão = hoje
+            // Data padrÃ£o = hoje
             document.getElementById('rec-data').value = new Date().toISOString().slice(0, 10);
             
             // Submit form
@@ -139,7 +139,7 @@
                 tbody.innerHTML = '';
 
                 if (snap.empty) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhuma receita lançada para este mês.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhuma receita lanÃ§ada para este mÃªs.</td></tr>';
                     totalEl.textContent = formatarMoeda(0);
                     return;
                 }
@@ -212,7 +212,7 @@
                 mostrarLoading(true);
                 try {
                     await colecaoUsuario('receitas').doc(id).delete();
-                    mostrarToast('Receita excluída.', 'sucesso');
+                    mostrarToast('Receita excluÃ­da.', 'sucesso');
                     await carregarReceitas(mesSelecionado);
                 } catch (err) {
                     mostrarToast('Erro ao excluir.', 'erro');

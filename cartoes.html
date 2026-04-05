@@ -1,25 +1,25 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartões | Finanças Pessoais</title>
+    <title>CartÃµes | FinanÃ§as Pessoais</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo"><span style="color:var(--primary)">$</span>martFin</div>
+            <div class="sidebar-logo">SmartFinanças</div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
-                <a href="receitas.html" class="nav-item">📈 Receitas</a>
-                <a href="despesas.html" class="nav-item">📉 Despesas fixas</a>
-                <a href="cartoes.html" class="nav-item active">💳 Cartões</a>
-                <a href="faturas.html" class="nav-item">📄 Importar Faturas</a>
-                <a href="parcelamentos.html" class="nav-item">⏳ Parcelamentos</a>
-                <a href="relatorios.html" class="nav-item">📊 Relatórios/Cobrança</a>
-                <a href="pessoas.html" class="nav-item">👥 Pessoas</a>
+                <a href="dashboard.html" class="nav-item">ðŸ  Dashboard</a>
+                <a href="receitas.html" class="nav-item">ðŸ“ˆ Receitas</a>
+                <a href="despesas.html" class="nav-item">ðŸ“‰ Despesas fixas</a>
+                <a href="cartoes.html" class="nav-item active">ðŸ’³ CartÃµes</a>
+                <a href="faturas.html" class="nav-item">ðŸ“„ Importar Faturas</a>
+                <a href="parcelamentos.html" class="nav-item">â³ Parcelamentos</a>
+                <a href="relatorios.html" class="nav-item">ðŸ“Š RelatÃ³rios/CobranÃ§a</a>
+                <a href="pessoas.html" class="nav-item">ðŸ‘¥ Pessoas</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -39,15 +39,15 @@
         <main class="main-content">
             <header class="page-header">
                 <div class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">☰</button>
-                    <h1>Meus Cartões</h1>
+                    <button id="hamburger" class="btn btn-ghost">â˜°</button>
+                    <h1>Meus CartÃµes</h1>
                 </div>
                 <div style="display:flex; gap:12px; align-items:center;">
-                    <button class="btn btn-primary" onclick="abrirNovoCartao()">+ Adicionar Cartão</button>
+                    <button class="btn btn-primary" onclick="abrirNovoCartao()">+ Adicionar CartÃ£o</button>
                     <div class="month-selector">
-                        <button class="month-nav" id="prevMonth">‹</button>
+                        <button class="month-nav" id="prevMonth">â€¹</button>
                         <span id="monthDisplay">...</span>
-                        <button class="month-nav" id="nextMonth">›</button>
+                        <button class="month-nav" id="nextMonth">â€º</button>
                     </div>
                 </div>
             </header>
@@ -56,19 +56,19 @@
                 <!-- JS popula aqui -->
             </div>
 
-            <!-- Modal Editar Cartão -->
+            <!-- Modal Editar CartÃ£o -->
             <div class="modal-wrapper" id="modalEditarCartao">
                 <div class="modal-overlay"></div>
                 <div class="modal-box">
                     <form id="formEditarCartao">
                         <input type="hidden" id="edit-cartao-id">
                         <div class="modal-header">
-                            <h3 class="modal-title" id="modalCartaoTitulo">Editar Detalhes do Cartão</h3>
+                            <h3 class="modal-title" id="modalCartaoTitulo">Editar Detalhes do CartÃ£o</h3>
                         </div>
                         <div class="modal-body">
                             <div class="fl-group">
                                 <input type="text" id="edit-cartao-nome" required>
-                                <label>Nome do Cartão</label>
+                                <label>Nome do CartÃ£o</label>
                             </div>
                             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
                                 <div class="fl-group">
@@ -86,12 +86,12 @@
                             </div>
                             <div class="fl-group">
                                 <input type="color" id="edit-cartao-cor" style="height:50px; padding:4px">
-                                <label>Cor de Identificação</label>
+                                <label>Cor de IdentificaÃ§Ã£o</label>
                             </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-ghost" onclick="fecharModal('modalEditarCartao')">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                            <button type="submit" class="btn btn-primary">Salvar AlteraÃ§Ãµes</button>
                         </div>
                     </form>
                 </div>
@@ -129,10 +129,10 @@
             const container = document.getElementById('containerCartoes');
             
             try {
-                // 1. Buscar cartões
+                // 1. Buscar cartÃµes
                 const snapCartoes = await colecaoUsuario('cartoes').orderBy('nome').get();
                 
-                // 2. Buscar faturas do mês selecionado
+                // 2. Buscar faturas do mÃªs selecionado
                 const snapFaturas = await colecaoUsuario('faturas').where('mes', '==', mes).get();
                 const faturas = Object.fromEntries(
                     snapFaturas.docs.map(d => [d.data().cartao_id, d.data()])
@@ -141,7 +141,7 @@
                 container.innerHTML = '';
 
                 if (snapCartoes.empty) {
-                    container.innerHTML = '<p class="empty-state">Nenhum cartão cadastrado. Recarregue para inicializar os padrões.</p>';
+                    container.innerHTML = '<p class="empty-state">Nenhum cartÃ£o cadastrado. Recarregue para inicializar os padrÃµes.</p>';
                     return;
                 }
 
@@ -154,7 +154,7 @@
                         <div class="card" style="border-left: 6px solid ${c.cor}">
                             <div class="flex-between mb-4">
                                 <h3 style="color:${c.cor}">${c.nome}</h3>
-                                <button class="btn btn-sm btn-ghost" onclick="abrirEdicaoCartao('${doc.id}', ${JSON.stringify(c).replace(/"/g, '&quot;')})">✎ Editar</button>
+                                <button class="btn btn-sm btn-ghost" onclick="abrirEdicaoCartao('${doc.id}', ${JSON.stringify(c).replace(/"/g, '&quot;')})">âœŽ Editar</button>
                             </div>
                             <div class="stat-label">Fatura ${formatarMes(mes)}</div>
                             <div class="stat-value valor-negativo mb-4">${formatarMoeda(f.total)}</div>
@@ -173,15 +173,15 @@
                                     <span>Total: ${formatarMoeda(c.limite)}</span>
                                 </div>
                             ` : `
-                                <div class="small text-muted" style="text-align:center; padding-top:8px">Limite não definido</div>
+                                <div class="small text-muted" style="text-align:center; padding-top:8px">Limite nÃ£o definido</div>
                             `}
                         </div>
                     `;
                 });
 
             } catch (err) {
-                console.error('[Cartões] Erro:', err);
-                mostrarToast('Erro ao carregar cartões.', 'erro');
+                console.error('[CartÃµes] Erro:', err);
+                mostrarToast('Erro ao carregar cartÃµes.', 'erro');
             } finally {
                 mostrarLoading(false);
             }
@@ -195,7 +195,7 @@
             document.getElementById('edit-cartao-limite').value = '0';
             document.getElementById('edit-cartao-cor').value = '#3b82f6';
             
-            document.getElementById('modalCartaoTitulo').textContent = 'Novo Cartão de Crédito';
+            document.getElementById('modalCartaoTitulo').textContent = 'Novo CartÃ£o de CrÃ©dito';
             abrirModal('modalEditarCartao');
             inicializarFloatLabels();
         }
@@ -208,7 +208,7 @@
             document.getElementById('edit-cartao-limite').value = dados.limite || 0;
             document.getElementById('edit-cartao-cor').value = dados.cor || '#3b82f6';
             
-            document.getElementById('modalCartaoTitulo').textContent = 'Editar Detalhes do Cartão';
+            document.getElementById('modalCartaoTitulo').textContent = 'Editar Detalhes do CartÃ£o';
             abrirModal('modalEditarCartao');
             inicializarFloatLabels(); // Re-sincroniza labels
         }
@@ -223,7 +223,7 @@
             const cor = document.getElementById('edit-cartao-cor').value;
 
             if (!nome) {
-                mostrarToast('O nome do cartão é obrigatório.', 'aviso');
+                mostrarToast('O nome do cartÃ£o Ã© obrigatÃ³rio.', 'aviso');
                 return;
             }
 
@@ -240,17 +240,17 @@
 
                 if (id) {
                     await colecaoUsuario('cartoes').doc(id).update(dados);
-                    mostrarToast('Cartão atualizado!', 'sucesso');
+                    mostrarToast('CartÃ£o atualizado!', 'sucesso');
                 } else {
                     dados.criado_em = firebase.firestore.FieldValue.serverTimestamp();
                     await colecaoUsuario('cartoes').add(dados);
-                    mostrarToast('Novo cartão adicionado!', 'sucesso');
+                    mostrarToast('Novo cartÃ£o adicionado!', 'sucesso');
                 }
                 
                 fecharModal('modalEditarCartao');
                 await carregarCartoes(mesSelecionado);
             } catch (err) {
-                console.error('[Cartões] Erro ao salvar:', err);
+                console.error('[CartÃµes] Erro ao salvar:', err);
                 mostrarToast('Erro ao salvar no Firestore.', 'erro');
             } finally {
                 mostrarLoading(false);

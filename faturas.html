@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Importar Faturas | Finanças Pessoais</title>
+    <title>Importar Faturas | FinanÃ§as Pessoais</title>
     <link rel="stylesheet" href="css/style.css">
     <!-- PDF.js via CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -15,16 +15,16 @@
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo"><span style="color:var(--primary)">$</span>martFin</div>
+            <div class="sidebar-logo">SmartFinanças</div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
-                <a href="receitas.html" class="nav-item">📈 Receitas</a>
-                <a href="despesas.html" class="nav-item">📉 Despesas fixas</a>
-                <a href="cartoes.html" class="nav-item">💳 Cartões</a>
-                <a href="faturas.html" class="nav-item active">📄 Importar Faturas</a>
-                <a href="parcelamentos.html" class="nav-item">⏳ Parcelamentos</a>
-                <a href="relatorios.html" class="nav-item">📊 Relatórios/Cobrança</a>
-                <a href="pessoas.html" class="nav-item">👥 Pessoas</a>
+                <a href="dashboard.html" class="nav-item">ðŸ  Dashboard</a>
+                <a href="receitas.html" class="nav-item">ðŸ“ˆ Receitas</a>
+                <a href="despesas.html" class="nav-item">ðŸ“‰ Despesas fixas</a>
+                <a href="cartoes.html" class="nav-item">ðŸ’³ CartÃµes</a>
+                <a href="faturas.html" class="nav-item active">ðŸ“„ Importar Faturas</a>
+                <a href="parcelamentos.html" class="nav-item">â³ Parcelamentos</a>
+                <a href="relatorios.html" class="nav-item">ðŸ“Š RelatÃ³rios/CobranÃ§a</a>
+                <a href="pessoas.html" class="nav-item">ðŸ‘¥ Pessoas</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -44,22 +44,22 @@
         <main class="main-content">
             <header class="page-header">
                 <section class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">☰</button>
+                    <button id="hamburger" class="btn btn-ghost">â˜°</button>
                     <h1>Importar Faturas em PDF</h1>
                 </section>
             </header>
 
-            <!-- Card de Configuração do Upload -->
+            <!-- Card de ConfiguraÃ§Ã£o do Upload -->
             <div class="card mb-4" id="cardUpload">
-                <h3 class="mb-4">Configurações de Importação</h3>
+                <h3 class="mb-4">ConfiguraÃ§Ãµes de ImportaÃ§Ã£o</h3>
                 <form id="formImportacao" class="stats-grid" style="grid-template-columns: 1.5fr 1fr 1.5fr; gap: 20px; align-items: start;">
                     <div class="fl-group">
                         <select id="selectCartaoImport" required></select>
-                        <label>Selecione o Cartão</label>
+                        <label>Selecione o CartÃ£o</label>
                     </div>
                     <div class="fl-group">
                         <input type="month" id="mesImport" required>
-                        <label>Mês da Fatura</label>
+                        <label>MÃªs da Fatura</label>
                     </div>
                     <div class="upload-area">
                         <div class="drop-zone" id="dropZone">
@@ -79,7 +79,7 @@
                 </div>
             </div>
 
-            <!-- Seção de Revisão -->
+            <!-- SeÃ§Ã£o de RevisÃ£o -->
             <div id="secaoRevisao" class="card mb-4" style="display:none">
                 <div id="revisaoContainer">
                     <!-- JS popula aqui -->
@@ -88,7 +88,7 @@
 
             <!-- Listagem de Faturas Importadas -->
             <div class="card">
-                <h3 class="mb-4">Últimas Faturas Importadas</h3>
+                <h3 class="mb-4">Ãšltimas Faturas Importadas</h3>
                 <div id="listaFaturas">
                     <!-- JS popula aqui -->
                 </div>
@@ -96,22 +96,22 @@
         </main>
     </div>
 
-    <!-- Modal de Classificação Manual -->
+    <!-- Modal de ClassificaÃ§Ã£o Manual -->
     <div class="modal-wrapper" id="modalClassificacao">
         <div class="modal-overlay"></div>
         <div class="modal-box modal-lg">
             <form id="formClassificacao">
                 <div class="modal-header">
                     <div class="flex-between mb-2">
-                        <h3 class="modal-title">Classificar Lançamento</h3>
+                        <h3 class="modal-title">Classificar LanÃ§amento</h3>
                         <span id="cl-progresso" class="badge badge-info">Faltam: 1</span>
                     </div>
-                    <p class="text-muted small">Este gasto não foi reconhecido automaticamente.</p>
+                    <p class="text-muted small">Este gasto nÃ£o foi reconhecido automaticamente.</p>
                 </div>
                 <div class="modal-body">
                     <div class="stats-grid" style="grid-template-columns: 2fr 1fr; margin-bottom: 24px;">
                         <div>
-                            <div class="stat-label">Descrição no PDF</div>
+                            <div class="stat-label">DescriÃ§Ã£o no PDF</div>
                             <div id="cl-descricao" style="font-weight:700; font-size:1.125rem">...</div>
                         </div>
                         <div>
@@ -122,10 +122,10 @@
 
                     <div class="fl-group">
                         <select id="cl-dono-principal" class="form-control" required></select>
-                        <label>Responsável pelo Gasto</label>
+                        <label>ResponsÃ¡vel pelo Gasto</label>
                     </div>
 
-                    <!-- Rodapé de Rateio (oculto por padrão) -->
+                    <!-- RodapÃ© de Rateio (oculto por padrÃ£o) -->
                     <div id="rateioArea" style="display:none; padding:16px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:20px;">
                         <div class="flex-between mb-2">
                             <span class="small text-muted">A soma das porcentagens deve ser 100%</span>
@@ -149,12 +149,12 @@
 
                     <label class="checkbox-container" style="display:flex;align-items:center;gap:8px">
                         <input type="checkbox" id="cl-lembrar"> 
-                        <span style="font-size:0.875rem">Sempre atribuir essa descrição a este responsável</span>
+                        <span style="font-size:0.875rem">Sempre atribuir essa descriÃ§Ã£o a este responsÃ¡vel</span>
                     </label>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-ghost" onclick="cancelarImportacao()">Pular do Mês</button>
-                    <button type="submit" class="btn btn-primary">Atribuir e Próximo</button>
+                    <button type="button" class="btn btn-ghost" onclick="cancelarImportacao()">Pular do MÃªs</button>
+                    <button type="submit" class="btn btn-primary">Atribuir e PrÃ³ximo</button>
                 </div>
             </form>
         </div>
@@ -166,8 +166,8 @@
         <div class="modal-box modal-lg">
             <div class="modal-header">
                 <div class="flex-between">
-                    <h3 class="modal-title">Lançamentos: <span id="verFaturaTitulo">...</span></h3>
-                    <button class="btn btn-ghost" onclick="fecharModal('modalVerFatura')">✕</button>
+                    <h3 class="modal-title">LanÃ§amentos: <span id="verFaturaTitulo">...</span></h3>
+                    <button class="btn btn-ghost" onclick="fecharModal('modalVerFatura')">âœ•</button>
                 </div>
             </div>
             <div class="modal-body p-0">
@@ -176,9 +176,9 @@
                         <thead>
                             <tr>
                                 <th>Data</th>
-                                <th>Descrição</th>
+                                <th>DescriÃ§Ã£o</th>
                                 <th style="text-align: right;">Valor</th>
-                                <th>Responsável</th>
+                                <th>ResponsÃ¡vel</th>
                             </tr>
                         </thead>
                         <tbody id="verFaturaCorpo"></tbody>

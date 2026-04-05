@@ -1,0 +1,6 @@
+# Arquivos gerados pelo Firebase Hosting (cache)
+.firebase/
+
+# Não rastrear arquivos de IDE
+.vscode/
+*.swp
