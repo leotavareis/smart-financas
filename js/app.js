@@ -363,19 +363,28 @@ async function atualizarTotalFatura(faturaId) {
 
 /** Ativa comportamento de label flutuante em todos os .fl-group da página. */
 function inicializarFloatLabels() {
+  // Tipos de input que sempre renderizam conteúdo visual no browser,
+  // então o label precisa estar sempre flutuando para não sobrepor.
+  const SEMPRE_FLUTUANTE = ['date', 'month', 'time', 'color', 'range'];
+
   document.querySelectorAll('.fl-group').forEach(grupo => {
     const inp = grupo.querySelector('input, textarea, select');
     const lbl = grupo.querySelector('label');
     if (!inp || !lbl) return;
 
     const verificar = () => {
-      const temValor = !!(inp.value || inp === document.activeElement);
+      const temValor = !!(
+        inp.value                              ||  // campo preenchido
+        inp === document.activeElement         ||  // campo focado
+        SEMPRE_FLUTUANTE.includes(inp.type)    ||  // date, month, color, etc.
+        inp.placeholder                            // tem placeholder visível
+      );
       lbl.classList.toggle('floating', temValor);
     };
 
-    inp.addEventListener('focus', verificar);
-    inp.addEventListener('blur',  verificar);
-    inp.addEventListener('input', verificar);
+    inp.addEventListener('focus',  verificar);
+    inp.addEventListener('blur',   verificar);
+    inp.addEventListener('input',  verificar);
     inp.addEventListener('change', verificar);
     verificar();
   });
