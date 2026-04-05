@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartões | Finanças Pessoais</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo"><span style="color:var(--primary)">$</span>martFin</div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
+                <a href="receitas.html" class="nav-item">📈 Receitas</a>
+                <a href="despesas.html" class="nav-item">📉 Despesas fixas</a>
+                <a href="cartoes.html" class="nav-item active">💳 Cartões</a>
+                <a href="faturas.html" class="nav-item">📄 Importar Faturas</a>
+                <a href="parcelamentos.html" class="nav-item">⏳ Parcelamentos</a>
+                <a href="relatorios.html" class="nav-item">📊 Relatórios/Cobrança</a>
+                <a href="pessoas.html" class="nav-item">👥 Pessoas</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <img id="userPhoto" src="" class="user-avatar" alt="">
+                    <div class="user-info">
+                        <div class="user-name" id="userName">...</div>
+                        <div class="user-email" id="userEmail">...</div>
+                    </div>
+                </div>
+                <button class="btn btn-logout" onclick="logout()">Sair</button>
+            </div>
+        </aside>
+        
+        <div id="sidebarOverlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="page-title">
+                    <button id="hamburger" class="btn btn-ghost">☰</button>
+                    <h1>Meus Cartões</h1>
+                </div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <button class="btn btn-primary" onclick="abrirNovoCartao()">+ Adicionar Cartão</button>
+                    <div class="month-selector">
+                        <button class="month-nav" id="prevMonth">‹</button>
+                        <span id="monthDisplay">...</span>
+                        <button class="month-nav" id="nextMonth">›</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="stats-grid" id="containerCartoes">
+                <!-- JS popula aqui -->
+            </div>
+
+            <!-- Modal Editar Cartão -->
+            <div class="modal-wrapper" id="modalEditarCartao">
+                <div class="modal-overlay"></div>
+                <div class="modal-box">
+                    <form id="formEditarCartao">
+                        <input type="hidden" id="edit-cartao-id">
+                        <div class="modal-header">
+                            <h3 class="modal-title" id="modalCartaoTitulo">Editar Detalhes do Cartão</h3>
+                        </div>
+                        <div class="modal-body">
+                            <div class="fl-group">
+                                <input type="text" id="edit-cartao-nome" required>
+                                <label>Nome do Cartão</label>
+                            </div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                                <div class="fl-group">
+                                    <input type="number" id="edit-cartao-fechamento" min="1" max="31" required>
+                                    <label>Dia Fechamento</label>
+                                </div>
+                                <div class="fl-group">
+                                    <input type="number" id="edit-cartao-vencimento" min="1" max="31" required>
+                                    <label>Dia Vencimento</label>
+                                </div>
+                            </div>
+                            <div class="fl-group">
+                                <input type="text" id="edit-cartao-limite" placeholder="0,00">
+                                <label>Limite Total (R$)</label>
+                            </div>
+                            <div class="fl-group">
+                                <input type="color" id="edit-cartao-cor" style="height:50px; padding:4px">
+                                <label>Cor de Identificação</label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-ghost" onclick="fecharModal('modalEditarCartao')">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- UI Components -->
+    <div id="loadingOverlay"><div class="spinner"></div></div>
+    <div id="toastContainer"></div>
+
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        verificarAuth(async (user) => {
+            inicializarAvatar(user);
+            inicializarSeletorMes(mes => carregarCartoes(mes));
+            
+            document.getElementById('formEditarCartao').addEventListener('submit', salvarCartao);
+
+            await carregarCartoes(mesSelecionado);
+        });
+
+        async function carregarCartoes(mes) {
+            mostrarLoading(true);
+            const container = document.getElementById('containerCartoes');
+            
+            try {
+                // 1. Buscar cartões
+                const snapCartoes = await colecaoUsuario('cartoes').orderBy('nome').get();
+                
+                // 2. Buscar faturas do mês selecionado
+                const snapFaturas = await colecaoUsuario('faturas').where('mes', '==', mes).get();
+                const faturas = Object.fromEntries(
+                    snapFaturas.docs.map(d => [d.data().cartao_id, d.data()])
+                );
+
+                container.innerHTML = '';
+
+                if (snapCartoes.empty) {
+                    container.innerHTML = '<p class="empty-state">Nenhum cartão cadastrado. Recarregue para inicializar os padrões.</p>';
+                    return;
+                }
+
+                snapCartoes.forEach(doc => {
+                    const c = doc.data();
+                    const f = faturas[doc.id] || { total: 0, status: 'aberta' };
+                    const pctLimite = c.limite > 0 ? (f.total / c.limite) * 100 : 0;
+
+                    container.innerHTML += `
+                        <div class="card" style="border-left: 6px solid ${c.cor}">
+                            <div class="flex-between mb-4">
+                                <h3 style="color:${c.cor}">${c.nome}</h3>
+                                <button class="btn btn-sm btn-ghost" onclick="abrirEdicaoCartao('${doc.id}', ${JSON.stringify(c).replace(/"/g, '&quot;')})">✎ Editar</button>
+                            </div>
+                            <div class="stat-label">Fatura ${formatarMes(mes)}</div>
+                            <div class="stat-value valor-negativo mb-4">${formatarMoeda(f.total)}</div>
+                            
+                            <div class="row-mid flex-between small text-muted mb-2">
+                                <span>Fechamento: dia ${c.dia_fechamento}</span>
+                                <span>Vencimento: dia ${c.dia_vencimento}</span>
+                            </div>
+
+                            ${c.limite > 0 ? `
+                                <div class="progresso-container" style="height:4px; margin-bottom:8px">
+                                    <div class="barra-progresso" style="width:${Math.min(pctLimite, 100)}%; background:${pctLimite > 90 ? 'var(--danger)' : 'var(--primary)'}"></div>
+                                </div>
+                                <div class="flex-between small text-muted">
+                                    <span>Limite usado: ${pctLimite.toFixed(1)}%</span>
+                                    <span>Total: ${formatarMoeda(c.limite)}</span>
+                                </div>
+                            ` : `
+                                <div class="small text-muted" style="text-align:center; padding-top:8px">Limite não definido</div>
+                            `}
+                        </div>
+                    `;
+                });
+
+            } catch (err) {
+                console.error('[Cartões] Erro:', err);
+                mostrarToast('Erro ao carregar cartões.', 'erro');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        function abrirNovoCartao() {
+            document.getElementById('edit-cartao-id').value = '';
+            document.getElementById('edit-cartao-nome').value = '';
+            document.getElementById('edit-cartao-fechamento').value = '1';
+            document.getElementById('edit-cartao-vencimento').value = '10';
+            document.getElementById('edit-cartao-limite').value = '0';
+            document.getElementById('edit-cartao-cor').value = '#3b82f6';
+            
+            document.getElementById('modalCartaoTitulo').textContent = 'Novo Cartão de Crédito';
+            abrirModal('modalEditarCartao');
+            inicializarFloatLabels();
+        }
+
+        function abrirEdicaoCartao(id, dados) {
+            document.getElementById('edit-cartao-id').value = id;
+            document.getElementById('edit-cartao-nome').value = dados.nome;
+            document.getElementById('edit-cartao-fechamento').value = dados.dia_fechamento;
+            document.getElementById('edit-cartao-vencimento').value = dados.dia_vencimento;
+            document.getElementById('edit-cartao-limite').value = dados.limite || 0;
+            document.getElementById('edit-cartao-cor').value = dados.cor || '#3b82f6';
+            
+            document.getElementById('modalCartaoTitulo').textContent = 'Editar Detalhes do Cartão';
+            abrirModal('modalEditarCartao');
+            inicializarFloatLabels(); // Re-sincroniza labels
+        }
+
+        async function salvarCartao(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-cartao-id').value;
+            const nome = document.getElementById('edit-cartao-nome').value.trim();
+            const fech = parseInt(document.getElementById('edit-cartao-fechamento').value);
+            const venc = parseInt(document.getElementById('edit-cartao-vencimento').value);
+            const limite = parseFloat(document.getElementById('edit-cartao-limite').value.toString().replace(',', '.')) || 0;
+            const cor = document.getElementById('edit-cartao-cor').value;
+
+            if (!nome) {
+                mostrarToast('O nome do cartão é obrigatório.', 'aviso');
+                return;
+            }
+
+            mostrarLoading(true);
+            try {
+                const dados = {
+                    nome,
+                    dia_fechamento: fech,
+                    dia_vencimento: venc,
+                    limite,
+                    cor,
+                    atualizado_em: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                if (id) {
+                    await colecaoUsuario('cartoes').doc(id).update(dados);
+                    mostrarToast('Cartão atualizado!', 'sucesso');
+                } else {
+                    dados.criado_em = firebase.firestore.FieldValue.serverTimestamp();
+                    await colecaoUsuario('cartoes').add(dados);
+                    mostrarToast('Novo cartão adicionado!', 'sucesso');
+                }
+                
+                fecharModal('modalEditarCartao');
+                await carregarCartoes(mesSelecionado);
+            } catch (err) {
+                console.error('[Cartões] Erro ao salvar:', err);
+                mostrarToast('Erro ao salvar no Firestore.', 'erro');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>

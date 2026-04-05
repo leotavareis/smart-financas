@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Faturas | Finanças Pessoais</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- PDF.js via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo"><span style="color:var(--primary)">$</span>martFin</div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
+                <a href="receitas.html" class="nav-item">📈 Receitas</a>
+                <a href="despesas.html" class="nav-item">📉 Despesas fixas</a>
+                <a href="cartoes.html" class="nav-item">💳 Cartões</a>
+                <a href="faturas.html" class="nav-item active">📄 Importar Faturas</a>
+                <a href="parcelamentos.html" class="nav-item">⏳ Parcelamentos</a>
+                <a href="relatorios.html" class="nav-item">📊 Relatórios/Cobrança</a>
+                <a href="pessoas.html" class="nav-item">👥 Pessoas</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <img id="userPhoto" src="" class="user-avatar" alt="">
+                    <div class="user-info">
+                        <div class="user-name" id="userName">...</div>
+                        <div class="user-email" id="userEmail">...</div>
+                    </div>
+                </div>
+                <button class="btn btn-logout" onclick="logout()">Sair</button>
+            </div>
+        </aside>
+        
+        <div id="sidebarOverlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <section class="page-title">
+                    <button id="hamburger" class="btn btn-ghost">☰</button>
+                    <h1>Importar Faturas em PDF</h1>
+                </section>
+            </header>
+
+            <!-- Card de Configuração do Upload -->
+            <div class="card mb-4" id="cardUpload">
+                <h3 class="mb-4">Configurações de Importação</h3>
+                <form id="formImportacao" class="stats-grid" style="grid-template-columns: 1.5fr 1fr 1.5fr; gap: 20px; align-items: start;">
+                    <div class="fl-group">
+                        <select id="selectCartaoImport" required></select>
+                        <label>Selecione o Cartão</label>
+                    </div>
+                    <div class="fl-group">
+                        <input type="month" id="mesImport" required>
+                        <label>Mês da Fatura</label>
+                    </div>
+                    <div class="upload-area">
+                        <div class="drop-zone" id="dropZone">
+                            <span class="text-muted">Clique ou arraste o PDF da fatura aqui</span>
+                            <input type="file" id="inputPDF" accept="application/pdf" style="display:none">
+                        </div>
+                    </div>
+                </form>
+
+                <div id="progressoImport" style="display:none; margin-top:20px;">
+                    <div class="flex-between mb-2">
+                        <span class="small text-muted" id="textoProgresso">Lendo PDF...</span>
+                    </div>
+                    <div class="progresso-container">
+                        <div class="barra-progresso" id="barraProgresso"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de Revisão -->
+            <div id="secaoRevisao" class="card mb-4" style="display:none">
+                <div id="revisaoContainer">
+                    <!-- JS popula aqui -->
+                </div>
+            </div>
+
+            <!-- Listagem de Faturas Importadas -->
+            <div class="card">
+                <h3 class="mb-4">Últimas Faturas Importadas</h3>
+                <div id="listaFaturas">
+                    <!-- JS popula aqui -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Classificação Manual -->
+    <div class="modal-wrapper" id="modalClassificacao">
+        <div class="modal-overlay"></div>
+        <div class="modal-box modal-lg">
+            <form id="formClassificacao">
+                <div class="modal-header">
+                    <div class="flex-between mb-2">
+                        <h3 class="modal-title">Classificar Lançamento</h3>
+                        <span id="cl-progresso" class="badge badge-info">Faltam: 1</span>
+                    </div>
+                    <p class="text-muted small">Este gasto não foi reconhecido automaticamente.</p>
+                </div>
+                <div class="modal-body">
+                    <div class="stats-grid" style="grid-template-columns: 2fr 1fr; margin-bottom: 24px;">
+                        <div>
+                            <div class="stat-label">Descrição no PDF</div>
+                            <div id="cl-descricao" style="font-weight:700; font-size:1.125rem">...</div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Valor</div>
+                            <div id="cl-valor" class="stat-value valor-negativo" style="font-size:1.125rem">...</div>
+                        </div>
+                    </div>
+
+                    <div class="fl-group">
+                        <select id="cl-dono-principal" class="form-control" required></select>
+                        <label>Responsável pelo Gasto</label>
+                    </div>
+
+                    <!-- Rodapé de Rateio (oculto por padrão) -->
+                    <div id="rateioArea" style="display:none; padding:16px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:20px;">
+                        <div class="flex-between mb-2">
+                            <span class="small text-muted">A soma das porcentagens deve ser 100%</span>
+                            <button type="button" class="btn btn-sm btn-ghost" id="btnAddRateio">+ Adicionar</button>
+                        </div>
+                        <div id="rateioLinhas" style="display:flex; flex-direction:column; gap:8px;">
+                            <!-- Linhas de rateio adicionadas via JS -->
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                        <div class="fl-group">
+                            <input type="number" id="cl-total-parcelas" min="1" value="1">
+                            <label>Total Parcelas</label>
+                        </div>
+                        <div class="fl-group">
+                            <input type="number" id="cl-parcela-atual" min="1" value="1">
+                            <label>Parcela Atual</label>
+                        </div>
+                    </div>
+
+                    <label class="checkbox-container" style="display:flex;align-items:center;gap:8px">
+                        <input type="checkbox" id="cl-lembrar"> 
+                        <span style="font-size:0.875rem">Sempre atribuir essa descrição a este responsável</span>
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" onclick="cancelarImportacao()">Pular do Mês</button>
+                    <button type="submit" class="btn btn-primary">Atribuir e Próximo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ver Fatura -->
+    <div class="modal-wrapper" id="modalVerFatura">
+        <div class="modal-overlay"></div>
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <div class="flex-between">
+                    <h3 class="modal-title">Lançamentos: <span id="verFaturaTitulo">...</span></h3>
+                    <button class="btn btn-ghost" onclick="fecharModal('modalVerFatura')">✕</button>
+                </div>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th style="text-align: right;">Valor</th>
+                                <th>Responsável</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verFaturaCorpo"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer flex-between">
+                <div class="stat-label">Total da Fatura: <span id="verFaturaTotal" class="valor-negativo mono">...</span></div>
+                <button class="btn btn-primary" onclick="fecharModal('modalVerFatura')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Components -->
+    <div id="loadingOverlay"><div class="spinner"></div></div>
+    <div id="toastContainer"></div>
+
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/pdf-import.js"></script>
+
+    <script>
+        verificarAuth(async (user) => {
+            inicializarAvatar(user);
+            await inicializarPaginaFaturas();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parcelamentos | Finanças Pessoais</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo"><span style="color:var(--primary)">$</span>martFin</div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
+                <a href="receitas.html" class="nav-item">📈 Receitas</a>
+                <a href="despesas.html" class="nav-item">📉 Despesas fixas</a>
+                <a href="cartoes.html" class="nav-item">💳 Cartões</a>
+                <a href="faturas.html" class="nav-item">📄 Importar Faturas</a>
+                <a href="parcelamentos.html" class="nav-item active">⏳ Parcelamentos</a>
+                <a href="relatorios.html" class="nav-item">📊 Relatórios/Cobrança</a>
+                <a href="pessoas.html" class="nav-item">👥 Pessoas</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <img id="userPhoto" src="" class="user-avatar" alt="">
+                    <div class="user-info">
+                        <div class="user-name" id="userName">...</div>
+                        <div class="user-email" id="userEmail">...</div>
+                    </div>
+                </div>
+                <button class="btn btn-logout" onclick="logout()">Sair</button>
+            </div>
+        </aside>
+        
+        <div id="sidebarOverlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="page-title">
+                    <button id="hamburger" class="btn btn-ghost">☰</button>
+                    <h1>Timeline de Parcelamentos</h1>
+                </div>
+                <div class="filters">
+                    <select id="filtroParcCartao" class="form-control" style="min-width: 200px;"></select>
+                </div>
+            </header>
+
+            <!-- Resumo -->
+            <div class="stats-grid mb-4" id="resumoParcelas">
+                <!-- JS popula aqui -->
+            </div>
+
+            <!-- Linha do Tempo -->
+            <div id="linhaTempo">
+                <!-- JS popula aqui -->
+            </div>
+        </main>
+    </div>
+
+    <!-- UI Components -->
+    <div id="loadingOverlay"><div class="spinner"></div></div>
+    <div id="toastContainer"></div>
+
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/parcelas.js"></script>
+
+    <script>
+        verificarAuth(async (user) => {
+            inicializarAvatar(user);
+            await inicializarPaginaParcelas();
+        });
+    </script>
+</body>
+</html>

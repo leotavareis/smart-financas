@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receitas | Finanças Pessoais</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo"><span style="color:var(--primary)">$</span>martFin</div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
+                <a href="receitas.html" class="nav-item active">📈 Receitas</a>
+                <a href="despesas.html" class="nav-item">📉 Despesas fixas</a>
+                <a href="cartoes.html" class="nav-item">💳 Cartões</a>
+                <a href="faturas.html" class="nav-item">📄 Importar Faturas</a>
+                <a href="parcelamentos.html" class="nav-item">⏳ Parcelamentos</a>
+                <a href="relatorios.html" class="nav-item">📊 Relatórios/Cobrança</a>
+                <a href="pessoas.html" class="nav-item">👥 Pessoas</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <img id="userPhoto" src="" class="user-avatar" alt="">
+                    <div class="user-info">
+                        <div class="user-name" id="userName">...</div>
+                        <div class="user-email" id="userEmail">...</div>
+                    </div>
+                </div>
+                <button class="btn btn-logout" onclick="logout()">Sair</button>
+            </div>
+        </aside>
+        
+        <div id="sidebarOverlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="page-title">
+                    <button id="hamburger" class="btn btn-ghost">☰</button>
+                    <h1>Receitas</h1>
+                </div>
+                <div class="month-selector">
+                    <button class="month-nav" id="prevMonth">‹</button>
+                    <span id="monthDisplay">...</span>
+                    <button class="month-nav" id="nextMonth">›</button>
+                </div>
+            </header>
+
+            <!-- Card de Cadastro -->
+            <div class="card mb-4">
+                <h3 class="mb-4">Adicionar Nova Receita</h3>
+                <form id="formReceita" class="stats-grid" style="grid-template-columns: 2fr 1fr 1fr auto; align-items: end;">
+                    <div class="fl-group mb-0">
+                        <input type="text" id="rec-descricao" required>
+                        <label>Descrição</label>
+                    </div>
+                    <div class="fl-group mb-0">
+                        <input type="text" id="rec-valor" placeholder="0,00" required>
+                        <label>Valor (R$)</label>
+                    </div>
+                    <div class="fl-group mb-0">
+                        <input type="date" id="rec-data" required>
+                        <label>Data</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="height: 52px; width: 100%;">Salvar</button>
+                </form>
+            </div>
+
+            <!-- Listagem -->
+            <div class="card">
+                <div class="flex-between mb-4">
+                    <h3>Histórico do Mês</h3>
+                    <div class="stat-value valor-positivo" id="totalMesReceitas" style="font-size: 1.25rem;">R$ 0,00</div>
+                </div>
+                
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th style="text-align: right;">Valor</th>
+                                <th style="text-align: right;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyReceitas">
+                            <!-- JS popula aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- UI Components -->
+    <div id="loadingOverlay"><div class="spinner"></div></div>
+    <div id="toastContainer"></div>
+
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        verificarAuth(async (user) => {
+            inicializarAvatar(user);
+            inicializarSeletorMes(mes => carregarReceitas(mes));
+            
+            // Data padrão = hoje
+            document.getElementById('rec-data').value = new Date().toISOString().slice(0, 10);
+            
+            // Submit form
+            document.getElementById('formReceita').addEventListener('submit', salvarReceita);
+
+            await carregarReceitas(mesSelecionado);
+        });
+
+        async function carregarReceitas(mes) {
+            mostrarLoading(true);
+            const tbody = document.getElementById('tbodyReceitas');
+            const totalEl = document.getElementById('totalMesReceitas');
+            
+            try {
+                const snap = await colecaoUsuario('receitas')
+                    .where('mes', '==', mes)
+                    .orderBy('data', 'asc')
+                    .get();
+
+                let total = 0;
+                tbody.innerHTML = '';
+
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhuma receita lançada para este mês.</td></tr>';
+                    totalEl.textContent = formatarMoeda(0);
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const r = doc.data();
+                    total += r.valor;
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="mono">${formatarData(r.data)}</td>
+                            <td>${r.descricao}</td>
+                            <td class="mono valor-positivo" style="text-align: right;">${formatarMoeda(r.valor)}</td>
+                            <td style="text-align: right;">
+                                <button class="btn btn-sm btn-ghost" onclick="excluirReceita('${doc.id}')">Excluir</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                totalEl.textContent = formatarMoeda(total);
+
+            } catch (err) {
+                console.error('[Receitas] Erro:', err);
+                mostrarToast('Erro ao carregar receitas.', 'erro');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        async function salvarReceita(e) {
+            e.preventDefault();
+            const desc = document.getElementById('rec-descricao').value.trim();
+            const valorStr = document.getElementById('rec-valor').value;
+            const data = document.getElementById('rec-data').value;
+            
+            const valor = parseFloat(valorStr.replace(',', '.'));
+
+            if (!desc || isNaN(valor) || !data) {
+                mostrarToast('Preencha todos os campos.', 'aviso');
+                return;
+            }
+
+            mostrarLoading(true);
+            try {
+                const mes = data.slice(0, 7);
+                await colecaoUsuario('receitas').add({
+                    descricao: desc,
+                    valor,
+                    data,
+                    mes,
+                    criado_em: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                mostrarToast('Receita adicionada!', 'sucesso');
+                document.getElementById('formReceita').reset();
+                document.getElementById('rec-data').value = new Date().toISOString().slice(0, 10);
+                
+                await carregarReceitas(mesSelecionado);
+
+            } catch (err) {
+                console.error('[Receitas] Erro ao salvar:', err);
+                mostrarToast('Erro ao salvar receita.', 'erro');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        async function excluirReceita(id) {
+            confirmarExclusao('Tem certeza que deseja excluir esta receita?', async () => {
+                mostrarLoading(true);
+                try {
+                    await colecaoUsuario('receitas').doc(id).delete();
+                    mostrarToast('Receita excluída.', 'sucesso');
+                    await carregarReceitas(mesSelecionado);
+                } catch (err) {
+                    mostrarToast('Erro ao excluir.', 'erro');
+                } finally {
+                    mostrarLoading(false);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

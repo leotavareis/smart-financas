@@ -1,0 +1,37 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "lancamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fatura_id", "order": "ASCENDING" },
+        { "fieldPath": "data", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "lancamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "mes", "order": "ASCENDING" },
+        { "fieldPath": "data", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "receitas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "mes", "order": "ASCENDING" },
+        { "fieldPath": "data", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "despesas_fixas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ativa", "order": "ASCENDING" },
+        { "fieldPath": "dia_vencimento", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
