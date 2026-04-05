@@ -9,10 +9,10 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
+        
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">SmartFinanças</div>
             <nav class="sidebar-nav">
-
                 <a href="dashboard.html" class="nav-item ">🏠 Dashboard</a>
                 <a href="receitas.html" class="nav-item ">📈 Receitas</a>
                 <a href="despesas.html" class="nav-item ">📉 Despesas fixas</a>
@@ -40,16 +40,17 @@
         <main class="main-content">
             <header class="page-header">
                 <div class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">â˜°</button>
+                    <button id="hamburger" class="btn btn-ghost">☰</button>
                     <h1>Meus Cartões</h1>
                 </div>
                 <div style="display:flex; gap:12px; align-items:center;">
                     <button class="btn btn-primary" onclick="abrirNovoCartao()">+ Adicionar Cartão</button>
-                    <div class="month-selector">
-                        <button class="month-nav" id="prevMonth">â€¹</button>
-                        <span id="monthDisplay">...</span>
-                        <button class="month-nav" id="nextMonth">â€º</button>
-                    </div>
+                    
+                <div class="month-selector">
+                    <button class="month-nav" id="prevMonth">‹</button>
+                    <span id="monthDisplay">...</span>
+                    <button class="month-nav" id="nextMonth">›</button>
+                </div>
                 </div>
             </header>
 
@@ -133,7 +134,7 @@
                 // 1. Buscar cartões
                 const snapCartoes = await colecaoUsuario('cartoes').orderBy('nome').get();
                 
-                // 2. Buscar faturas do mÃªs selecionado
+                // 2. Buscar faturas do mês selecionado
                 const snapFaturas = await colecaoUsuario('faturas').where('mes', '==', mes).get();
                 const faturas = Object.fromEntries(
                     snapFaturas.docs.map(d => [d.data().cartao_id, d.data()])
@@ -196,7 +197,7 @@
             document.getElementById('edit-cartao-limite').value = '0';
             document.getElementById('edit-cartao-cor').value = '#3b82f6';
             
-            document.getElementById('modalCartaoTitulo').textContent = 'Novo Cartão de CrÃ©dito';
+            document.getElementById('modalCartaoTitulo').textContent = 'Novo Cartão de Crédito';
             abrirModal('modalEditarCartao');
             inicializarFloatLabels();
         }
@@ -224,7 +225,7 @@
             const cor = document.getElementById('edit-cartao-cor').value;
 
             if (!nome) {
-                mostrarToast('O nome do cartão Ã© obrigatório.', 'aviso');
+                mostrarToast('O nome do cartão é obrigatório.', 'aviso');
                 return;
             }
 

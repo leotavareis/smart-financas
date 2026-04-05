@@ -9,10 +9,10 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
+        
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">SmartFinanças</div>
             <nav class="sidebar-nav">
-
                 <a href="dashboard.html" class="nav-item ">🏠 Dashboard</a>
                 <a href="receitas.html" class="nav-item ">📈 Receitas</a>
                 <a href="despesas.html" class="nav-item ">📉 Despesas fixas</a>
@@ -40,7 +40,7 @@
         <main class="main-content">
             <header class="page-header">
                 <div class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">â˜°</button>
+                    <button id="hamburger" class="btn btn-ghost">☰</button>
                     <h1>Gerenciar Pessoas</h1>
                 </div>
                 <button class="btn btn-primary" onclick="abrirModalPessoa()">+ Adicionar Pessoa</button>
@@ -169,7 +169,7 @@
             const cor = document.getElementById('p-cor').value;
 
             if (!nome) {
-                mostrarToast('O nome Ã© obrigatório.', 'aviso');
+                mostrarToast('O nome é obrigatório.', 'aviso');
                 return;
             }
 
@@ -195,7 +195,7 @@
         }
 
         async function excluirPessoa(id) {
-            confirmarExclusao('Isso removerÃ¡ a pessoa da lista, mas os lançamentos antigos dela permanecerão. Continuar?', async () => {
+            confirmarExclusao('Isso removerá a pessoa da lista, mas os lançamentos antigos dela permanecerão. Continuar?', async () => {
                 mostrarLoading(true);
                 try {
                     await colecaoUsuario('pessoas').doc(id).delete();

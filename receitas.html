@@ -9,10 +9,10 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
+        
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">SmartFinanças</div>
             <nav class="sidebar-nav">
-
                 <a href="dashboard.html" class="nav-item ">🏠 Dashboard</a>
                 <a href="receitas.html" class="nav-item active">📈 Receitas</a>
                 <a href="despesas.html" class="nav-item ">📉 Despesas fixas</a>
@@ -40,13 +40,14 @@
         <main class="main-content">
             <header class="page-header">
                 <div class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">â˜°</button>
+                    <button id="hamburger" class="btn btn-ghost">☰</button>
                     <h1>Receitas</h1>
                 </div>
+                
                 <div class="month-selector">
-                    <button class="month-nav" id="prevMonth">â€¹</button>
+                    <button class="month-nav" id="prevMonth">‹</button>
                     <span id="monthDisplay">...</span>
-                    <button class="month-nav" id="nextMonth">â€º</button>
+                    <button class="month-nav" id="nextMonth">›</button>
                 </div>
             </header>
 
@@ -73,7 +74,7 @@
             <!-- Listagem -->
             <div class="card">
                 <div class="flex-between mb-4">
-                    <h3>Histórico do MÃªs</h3>
+                    <h3>Histórico do Mês</h3>
                     <div class="stat-value valor-positivo" id="totalMesReceitas" style="font-size: 1.25rem;">R$ 0,00</div>
                 </div>
                 
@@ -140,7 +141,7 @@
                 tbody.innerHTML = '';
 
                 if (snap.empty) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhuma receita lançada para este mÃªs.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhuma receita lançada para este mês.</td></tr>';
                     totalEl.textContent = formatarMoeda(0);
                     return;
                 }
@@ -213,7 +214,7 @@
                 mostrarLoading(true);
                 try {
                     await colecaoUsuario('receitas').doc(id).delete();
-                    mostrarToast('Receita excluÃ­da.', 'sucesso');
+                    mostrarToast('Receita excluída.', 'sucesso');
                     await carregarReceitas(mesSelecionado);
                 } catch (err) {
                     mostrarToast('Erro ao excluir.', 'erro');

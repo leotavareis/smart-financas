@@ -1,21 +1,21 @@
-﻿// ============================================================
-// PDF-IMPORT.JS â€” ImportaÃ§Ã£o e classificaÃ§Ã£o de faturas em PDF
+// ============================================================
+// PDF-IMPORT.JS — Importação e classificação de faturas em PDF
 // Depende de: PDF.js (cdnjs), app.js, auth.js
 // ============================================================
 
-// Estado da importaÃ§Ã£o atual
+// Estado da importação atual
 const estadoImport = {
   cartaoId       : null,
   mes            : null,
-  linhas         : [],        // LanÃ§amentos extraÃ­dos do PDF
-  classificados  : [],        // LanÃ§amentos prontos para salvar
-  indexAtual     : 0,         // Ãndice no modal de classificaÃ§Ã£o manual
+  linhas         : [],        // Lançamentos extraídos do PDF
+  classificados  : [],        // Lançamentos prontos para salvar
+  indexAtual     : 0,         // Índice no modal de classificação manual
   pessoas        : [],        // Cache das pessoas
-  cartoes        : []         // Cache dos cartÃµes
+  cartoes        : []         // Cache dos cartões
 };
 
 // ============================================================
-// INICIALIZAÃ‡ÃƒO DA PÃGINA
+// INICIALIZAÇÃO DA PÁGINA
 // ============================================================
 
 async function inicializarPaginaFaturas() {
@@ -31,7 +31,7 @@ async function inicializarPaginaFaturas() {
     await listarFaturasExistentes();
   } catch (err) {
     console.error('[PDF] Erro ao inicializar:', err);
-    mostrarToast('Erro ao carregar a pÃ¡gina.', 'erro');
+    mostrarToast('Erro ao carregar a página.', 'erro');
   } finally {
     mostrarLoading(false);
   }
@@ -47,7 +47,7 @@ async function carregarCartoesSelect() {
 
   const sel = document.getElementById('selectCartaoImport');
   if (!sel) return;
-  sel.innerHTML = '<option value="">â€” Selecione o cartÃ£o â€”</option>';
+  sel.innerHTML = '<option value="">— Selecione o cartão —</option>';
   estadoImport.cartoes.forEach(c => {
     sel.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
   });
@@ -85,7 +85,7 @@ async function listarFaturasExistentes() {
     lista.innerHTML += `
       <div class="card card-row" style="border-left:4px solid ${cartao?.cor||'#3b82f6'}">
         <div>
-          <strong>${cartao?.nome || 'CartÃ£o'}</strong>
+          <strong>${cartao?.nome || 'Cartão'}</strong>
           <span class="text-muted">${formatarMes(f.mes)}</span>
         </div>
         <div class="row-mid">
@@ -122,7 +122,7 @@ function configurarDropZone() {
     zone.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
     if (file?.type === 'application/pdf') processarPDF(file);
-    else mostrarToast('Selecione um arquivo PDF vÃ¡lido.', 'aviso');
+    else mostrarToast('Selecione um arquivo PDF válido.', 'aviso');
   });
 
   inp.addEventListener('change', () => {
@@ -138,13 +138,13 @@ function configurarFormImport() {
     estadoImport.mes      = document.getElementById('mesImport').value;
 
     if (!estadoImport.cartaoId || !estadoImport.mes) {
-      mostrarToast('Selecione o cartÃ£o e o mÃªs antes de importar.', 'aviso');
+      mostrarToast('Selecione o cartão e o mês antes de importar.', 'aviso');
       return;
     }
     document.getElementById('dropZone').click();
   });
 
-  // Preenche o mÃªs padrÃ£o com o mÃªs atual
+  // Preenche o mês padrão com o mês atual
   const mesInput = document.getElementById('mesImport');
   if (mesInput) mesInput.value = getMesAtual();
 }
@@ -154,22 +154,22 @@ function configurarFormImport() {
 // ============================================================
 
 /**
- * LÃª o arquivo PDF com PDF.js e extrai o texto de todas as pÃ¡ginas.
+ * Lê o arquivo PDF com PDF.js e extrai o texto de todas as páginas.
  * @param {File} arquivo
  */
 async function processarPDF(arquivo) {
-  // Verificar se cartÃ£o e mÃªs foram selecionados
+  // Verificar se cartão e mês foram selecionados
   estadoImport.cartaoId = document.getElementById('selectCartaoImport')?.value;
   estadoImport.mes      = document.getElementById('mesImport')?.value;
 
   if (!estadoImport.cartaoId || !estadoImport.mes) {
-    mostrarToast('Selecione o cartÃ£o e o mÃªs antes de carregar o PDF.', 'aviso');
+    mostrarToast('Selecione o cartão e o mês antes de carregar o PDF.', 'aviso');
     return;
   }
 
   mostrarLoading(true);
   document.getElementById('progressoImport').style.display = 'block';
-  setProgresso('Lendo PDFâ€¦', 10);
+  setProgresso('Lendo PDF...', 10);
 
   try {
     const arrayBuffer = await arquivo.arrayBuffer();
@@ -180,20 +180,20 @@ async function processarPDF(arquivo) {
       const page  = await pdfDoc.getPage(i);
       const texto = await page.getTextContent();
       textoCompleto += texto.items.map(t => t.str).join(' ') + '\n';
-      setProgresso(`Lendo pÃ¡gina ${i} de ${pdfDoc.numPages}â€¦`, 10 + (i / pdfDoc.numPages) * 40);
+      setProgresso(`Lendo página ${i} de ${pdfDoc.numPages}...`, 10 + (i / pdfDoc.numPages) * 40);
     }
 
-    setProgresso('Identificando lanÃ§amentosâ€¦', 55);
+    setProgresso('Identificando lançamentos...', 55);
     const linhas = parsearTextoFatura(textoCompleto);
 
     if (linhas.length === 0) {
-      mostrarToast('Nenhum lanÃ§amento encontrado no PDF. Verifique o arquivo.', 'aviso');
+      mostrarToast('Nenhum lançamento encontrado no PDF. Verifique o arquivo.', 'aviso');
       document.getElementById('progressoImport').style.display = 'none';
       mostrarLoading(false);
       return;
     }
 
-    setProgresso(`${linhas.length} lanÃ§amentos encontrados. Buscando na memÃ³riaâ€¦`, 70);
+    setProgresso(`${linhas.length} lançamentos encontrados. Buscando na memória...`, 70);
     estadoImport.linhas = linhas;
     await aplicarMemoriaDescricoes(linhas);
 
@@ -224,35 +224,35 @@ function setProgresso(msg, pct) {
 // ============================================================
 
 /**
- * Extrai lanÃ§amentos de um bloco de texto bruto da fatura.
- * Suporta variaÃ§Ãµes de formato das principais bandeiras.
+ * Extrai lançamentos de um bloco de texto bruto da fatura.
+ * Suporta variações de formato das principais bandeiras.
  * @param {string} texto
  * @returns {Array} linhas com { descricao, valor, data, origem }
  */
 function parsearTextoFatura(texto) {
   const resultados = [];
 
-  // PadrÃµes possÃ­veis:
+  // Padrões possíveis:
   // "15/01 DESCRICAO R$ 1.234,56"
   // "15 JAN DESCRICAO 1.234,56"
   // "15/01/2026 DESCRICAO 1.234,56"
   const padroes = [
-    // DD/MM + descriÃ§Ã£o + R$ valor
+    // DD/MM + descrição + R$ valor
     /(\d{2}\/\d{2}(?:\/\d{4})?)\s+(.+?)\s+R\$\s*([\d.,]+)/gi,
-    // DD/MM + descriÃ§Ã£o + valor sem R$
+    // DD/MM + descrição + valor sem R$
     /(\d{2}\/\d{2}(?:\/\d{4})?)\s+(.+?)\s+([\d]{1,3}(?:\.\d{3})*,\d{2})/gi,
   ];
 
   const linhastexto = texto.split('\n');
 
   for (const linha of linhastexto) {
-    const limpÐ° = linha.trim();
-    if (!limpÐ°) continue;
+    const limpa = linha.trim();
+    if (!limpa) continue;
 
     for (const padrao of padroes) {
       padrao.lastIndex = 0;
       let match;
-      while ((match = padrao.exec(limpÐ°)) !== null) {
+      while ((match = padrao.exec(limpa)) !== null) {
         const dataStr  = match[1].trim();
         const desc     = limparDescricao(match[2]);
         const valorStr = match[3].replace(/\./g, '').replace(',', '.');
@@ -261,7 +261,7 @@ function parsearTextoFatura(texto) {
         if (!desc || isNaN(valor) || valor <= 0 || valor > 99999) continue;
         if (isLinhaTotalizadora(desc)) continue; // Ignorar totais/subtotais
 
-        // Evitar duplicatas na mesma extraÃ§Ã£o
+        // Evitar duplicatas na mesma extração
         const jaExiste = resultados.some(r =>
           r.descricao === desc && Math.abs(r.valor - valor) < 0.01
         );
@@ -274,7 +274,7 @@ function parsearTextoFatura(texto) {
             dono          : null,
             parcela_atual : 1,
             total_parcelas: 1,
-            classificacao : 'manual', // serÃ¡ atualizado se encontrar na memÃ³ria
+            classificacao : 'manual', // será atualizado se encontrar na memória
             lembrar       : false
           });
         }
@@ -287,19 +287,19 @@ function parsearTextoFatura(texto) {
   return resultados;
 }
 
-/** Remove lixo da descriÃ§Ã£o: nÃºmeros de cartÃ£o, prefixos comuns */
+/** Remove lixo da descrição: números de cartão, prefixos comuns */
 function limparDescricao(str) {
   return str
-    .replace(/\*+\d{4}/g, '')       // *1234 (nÃºmero mascarado do cartÃ£o)
-    .replace(/\b\d{4}\b/g, '')       // sequÃªncias de 4 dÃ­gitos
+    .replace(/\*+\d{4}/g, '')       // *1234 (número mascarado do cartão)
+    .replace(/\b\d{4}\b/g, '')       // sequências de 4 dígitos
     .replace(/\s{2,}/g, ' ')
     .trim()
     .substring(0, 80);
 }
 
-/** Verifica se a linha Ã© um totalizador que deve ser ignorado */
+/** Verifica se a linha é um totalizador que deve ser ignorado */
 function isLinhaTotalizadora(desc) {
-  const palavras = ['total', 'subtotal', 'saldo', 'pagamento', 'crÃ©dito', 'limite', 'vencimento'];
+  const palavras = ['total', 'subtotal', 'saldo', 'pagamento', 'crédito', 'limite', 'vencimento'];
   const norm = normalizarString(desc);
   return palavras.some(p => norm.startsWith(p));
 }
@@ -314,11 +314,11 @@ function normalizarData(dataStr) {
 }
 
 // ============================================================
-// MEMÃ“RIA DE DESCRIÃ‡Ã•ES
+// MEMÓRIA DE DESCRIÇÕES
 // ============================================================
 
 /**
- * Para cada lanÃ§amento, busca na coleÃ§Ã£o `memoria_descricoes`.
+ * Para cada lançamento, busca na coleção `memoria_descricoes`.
  * Se encontrar, preenche dono e parcelas automaticamente.
  */
 async function aplicarMemoriaDescricoes(linhas) {
@@ -326,7 +326,7 @@ async function aplicarMemoriaDescricoes(linhas) {
   try {
     snap = await colecaoUsuario('memoria_descricoes').get();
   } catch (err) {
-    console.warn('[MemÃ³ria] NÃ£o foi possÃ­vel carregar:', err);
+    console.warn('[Memória] Não foi possível carregar:', err);
     return;
   }
 
@@ -348,7 +348,7 @@ async function aplicarMemoriaDescricoes(linhas) {
 }
 
 // ============================================================
-// TELA DE REVISÃƒO â€” lista todos os lanÃ§amentos antes de confirmar
+// TELA DE REVISÃO — lista todos os lançamentos antes de confirmar
 // ============================================================
 
 function mostrarRevisaoImport() {
@@ -358,10 +358,10 @@ function mostrarRevisaoImport() {
 
   estadoImport.classificados = JSON.parse(JSON.stringify(estadoImport.linhas));
 
-  // Verificar quantos precisam de classificaÃ§Ã£o manual
+  // Verificar quantos precisam de classificação manual
   const semClassificacao = estadoImport.classificados.filter(l => !l.dono);
   if (semClassificacao.length > 0) {
-    // Iniciar fluxo de classificaÃ§Ã£o manual
+    // Iniciar fluxo de classificação manual
     estadoImport.indexAtual = 0;
     proximoParaClassificar();
     return;
@@ -380,17 +380,17 @@ function renderizarRevisao() {
 
   container.innerHTML = `
     <div class="revisao-header">
-      <h3>ðŸ“‹ RevisÃ£o â€” ${cartao?.nome || ''} Â· ${formatarMes(estadoImport.mes)}</h3>
-      <p class="text-muted">${estadoImport.classificados.length} lanÃ§amentos</p>
+      <h3>📑 Revisão — ${cartao?.nome || ''} · ${formatarMes(estadoImport.mes)}</h3>
+      <p class="text-muted">${estadoImport.classificados.length} lançamentos</p>
     </div>
     <div class="table-wrap">
       <table class="table">
         <thead>
           <tr>
             <th>Data</th>
-            <th>DescriÃ§Ã£o</th>
+            <th>Descrição</th>
             <th>Valor</th>
-            <th>ResponsÃ¡vel</th>
+            <th>Responsável</th>
             <th>Parcelas</th>
             <th>Origem</th>
           </tr>
@@ -411,7 +411,7 @@ function renderizarRevisao() {
   estadoImport.classificados.forEach((l, i) => {
     total += l.valor;
     const donoTexto = formatarDonoTexto(l.dono);
-    const parc      = l.total_parcelas > 1 ? `${l.parcela_atual}/${l.total_parcelas}` : 'â€”';
+    const parc      = l.total_parcelas > 1 ? `${l.parcela_atual}/${l.total_parcelas}` : '—';
     const origBadge = l.classificacao === 'automatico'
       ? '<span class="badge badge-info">Auto</span>'
       : '<span class="badge badge-warning">Manual</span>';
@@ -431,7 +431,7 @@ function renderizarRevisao() {
 }
 
 function formatarDonoTexto(dono) {
-  if (!dono || !dono.length) return '<span class="text-muted">â€”</span>';
+  if (!dono || !dono.length) return '<span class="text-muted">—</span>';
   return dono.map(d => {
     if (d.pessoa_id === 'eu') return 'Eu';
     const p = estadoImport.pessoas.find(x => x.id === d.pessoa_id);
@@ -441,14 +441,14 @@ function formatarDonoTexto(dono) {
 }
 
 // ============================================================
-// MODAL DE CLASSIFICAÃ‡ÃƒO MANUAL
+// MODAL DE CLASSIFICAÇÃO MANUAL
 // ============================================================
 
 function configurarModalClassificacao() {
-  // FormulÃ¡rio de classificaÃ§Ã£o
+  // Formulário de classificação
   document.getElementById('formClassificacao')?.addEventListener('submit', salvarClassificacaoAtual);
 
-  // Rateio mÃºltiplo
+  // Rateio múltiplo
   document.getElementById('btnAddRateio')?.addEventListener('click', adicionarLinhaRateio);
 }
 
@@ -479,7 +479,7 @@ function preencherModalClassificacao(lancamento) {
     estadoImport.pessoas.forEach(p => {
       selDono.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
     });
-    selDono.innerHTML += '<option value="rateio">Dividir entre pessoasâ€¦</option>';
+    selDono.innerHTML += '<option value="rateio">Dividir entre pessoas...</option>';
   }
 
   // Parcelas
@@ -497,7 +497,7 @@ function preencherModalClassificacao(lancamento) {
   const total    = estadoImport.classificados.filter(l => !l.dono).length;
   const restante = estadoImport.classificados.filter(l => !l.dono).length;
   document.getElementById('cl-progresso').textContent =
-    `Falta classificar: ${restante} lanÃ§amento(s)`;
+    `Falta classificar: ${restante} lançamento(s)`;
 }
 
 function adicionarLinhaRateio() {
@@ -510,7 +510,7 @@ function adicionarLinhaRateio() {
       ${estadoImport.pessoas.map(p => `<option value="${p.id}">${p.nome}</option>`).join('')}
     </select>
     <input type="number" class="form-control rateio-pct" placeholder="%" min="1" max="100" value="50">
-    <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.rateio-linha').remove()">âœ•</button>
+    <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.rateio-linha').remove()">✕</button>
   `;
   area.appendChild(div);
 }
@@ -549,10 +549,10 @@ function salvarClassificacaoAtual(e) {
   if (lembrar) salvarMemoriaDescricao(lancamento);
 
   fecharModal('modalClassificacao');
-  proximoParaClassificar(); // AvanÃ§a para o prÃ³ximo pendente
+  proximoParaClassificar(); // Avança para o próximo pendente
 }
 
-// Alterna exibiÃ§Ã£o do rateio
+// Alterna exibição do rateio
 document.addEventListener('change', e => {
   if (e.target.id === 'cl-dono-principal') {
     const area = document.getElementById('rateioArea');
@@ -564,7 +564,7 @@ document.addEventListener('change', e => {
 });
 
 // ============================================================
-// SALVAR NA MEMÃ“RIA
+// SALVAR NA MEMÓRIA
 // ============================================================
 
 async function salvarMemoriaDescricao(lancamento) {
@@ -577,12 +577,12 @@ async function salvarMemoriaDescricao(lancamento) {
       atualizado_em  : firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch (err) {
-    console.warn('[MemÃ³ria] Erro ao salvar:', err);
+    console.warn('[Memória] Erro ao salvar:', err);
   }
 }
 
 // ============================================================
-// CONFIRMAÃ‡ÃƒO FINAL â€” salvar no Firestore
+// CONFIRMAÇÃO FINAL — salvar no Firestore
 // ============================================================
 
 async function confirmarImportacao() {
@@ -619,15 +619,15 @@ async function confirmarImportacao() {
 
     await batch.commit();
 
-    mostrarToast(`${estadoImport.classificados.length} lanÃ§amentos salvos!`, 'sucesso');
+    mostrarToast(`${estadoImport.classificados.length} lançamentos salvos!`, 'sucesso');
     document.getElementById('secaoRevisao').style.display = 'none';
     estadoImport.linhas = [];
     estadoImport.classificados = [];
     await listarFaturasExistentes();
 
   } catch (err) {
-    console.error('[PDF] Erro ao confirmar importaÃ§Ã£o:', err);
-    mostrarToast('Erro ao salvar os lanÃ§amentos.', 'erro');
+    console.error('[PDF] Erro ao confirmar importação:', err);
+    mostrarToast('Erro ao salvar os lançamentos.', 'erro');
   } finally {
     mostrarLoading(false);
   }
@@ -640,7 +640,7 @@ function cancelarImportacao() {
 }
 
 // ============================================================
-// VER LANÃ‡AMENTOS DE UMA FATURA EXISTENTE
+// VER LANÇAMENTOS DE UMA FATURA EXISTENTE
 // ============================================================
 
 async function verLancamentosFatura(faturaId, mes) {
@@ -660,7 +660,7 @@ async function verLancamentosFatura(faturaId, mes) {
       total += l.valor;
       corpo.innerHTML += `
         <tr>
-          <td class="mono">${l.data?.slice(5).split('-').reverse().join('/') || 'â€”'}</td>
+          <td class="mono">${l.data?.slice(5).split('-').reverse().join('/') || '—'}</td>
           <td>${l.descricao}</td>
           <td class="mono valor-negativo">${formatarMoeda(l.valor)}</td>
           <td>${formatarDonoTexto(l.dono)}</td>
@@ -670,7 +670,7 @@ async function verLancamentosFatura(faturaId, mes) {
     document.getElementById('verFaturaTotal').textContent = formatarMoeda(total);
     abrirModal('modalVerFatura');
   } catch (err) {
-    mostrarToast('Erro ao carregar lanÃ§amentos.', 'erro');
+    mostrarToast('Erro ao carregar lançamentos.', 'erro');
   } finally {
     mostrarLoading(false);
   }
@@ -681,17 +681,17 @@ async function verLancamentosFatura(faturaId, mes) {
 // ============================================================
 
 async function excluirFatura(faturaId) {
-  confirmarExclusao('Excluir esta fatura e todos os seus lanÃ§amentos?', async () => {
+  confirmarExclusao('Excluir esta fatura e todos os seus lançamentos?', async () => {
     mostrarLoading(true);
     try {
-      // Excluir lanÃ§amentos
+      // Excluir lançamentos
       const snap = await colecaoUsuario('lancamentos').where('fatura_id', '==', faturaId).get();
       const batch = db.batch();
       const userRef = db.collection('usuarios').doc(auth.currentUser.uid);
       snap.forEach(d => batch.delete(userRef.collection('lancamentos').doc(d.id)));
       batch.delete(userRef.collection('faturas').doc(faturaId));
       await batch.commit();
-      mostrarToast('Fatura excluÃ­da.', 'sucesso');
+      mostrarToast('Fatura excluída.', 'sucesso');
       await listarFaturasExistentes();
     } catch (err) {
       mostrarToast('Erro ao excluir fatura.', 'erro');
@@ -700,3 +700,10 @@ async function excluirFatura(faturaId) {
     }
   });
 }
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.location.pathname.includes('faturas.html')) {
+    inicializarPaginaFaturas();
+  }
+});

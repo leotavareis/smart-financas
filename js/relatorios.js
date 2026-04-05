@@ -1,5 +1,5 @@
-﻿// ============================================================
-// RELATORIOS.JS â€” RelatÃ³rio de cobranÃ§a por pessoa
+// ============================================================
+// RELATORIOS.JS — Relatório de cobrança por pessoa
 // Depende de: app.js, auth.js
 // ============================================================
 
@@ -11,19 +11,19 @@ async function inicializarPaginaRelatorios() {
     inicializarSeletorMes(mes => gerarRelatorio(mes));
     await gerarRelatorio(mesSelecionado);
   } catch (err) {
-    console.error('[RelatÃ³rios] Erro ao inicializar:', err);
-    mostrarToast('Erro ao carregar relatÃ³rio.', 'erro');
+    console.error('[Relatórios] Erro ao inicializar:', err);
+    mostrarToast('Erro ao carregar relatório.', 'erro');
   } finally {
     mostrarLoading(false);
   }
 }
 
 // ============================================================
-// GERAÃ‡ÃƒO DO RELATÃ“RIO
+// GERAÇÃO DO RELATÓRIO
 // ============================================================
 
 /**
- * Busca todos os lanÃ§amentos do mÃªs e organiza por pessoa.
+ * Busca todos os lançamentos do mês e organiza por pessoa.
  * @param {string} mes  YYYY-MM
  */
 async function gerarRelatorio(mes) {
@@ -46,7 +46,7 @@ async function gerarRelatorio(mes) {
       snapCartoes.docs.map(d => [d.id, { id: d.id, ...d.data() }])
     );
 
-    // Organizar lanÃ§amentos por pessoa
+    // Organizar lançamentos por pessoa
     dadosRelatorio = {};
 
     snapLanc.forEach(doc => {
@@ -55,14 +55,14 @@ async function gerarRelatorio(mes) {
 
       l.dono.forEach(d => {
         const pid = d.pessoa_id;
-        if (pid === 'eu') return; // Pular lanÃ§amentos prÃ³prios no relatÃ³rio de cobranÃ§a
+        if (pid === 'eu') return; // Pular lançamentos próprios no relatório de cobrança
 
         if (!dadosRelatorio[pid]) {
           const p = pessoas[pid] || { nome: 'Pessoa desconhecida', cor: '#999' };
           dadosRelatorio[pid] = { nome: p.nome, cor: p.cor, cartoes: {}, total: 0 };
         }
 
-        const cartaoNome = cartoes[l.cartao_id]?.nome || 'CartÃ£o';
+        const cartaoNome = cartoes[l.cartao_id]?.nome || 'Cartão';
         const cartaoCor  = cartoes[l.cartao_id]?.cor  || '#3b82f6';
 
         if (!dadosRelatorio[pid].cartoes[cartaoNome]) {
@@ -90,15 +90,15 @@ async function gerarRelatorio(mes) {
     renderizarRelatorio(mes);
 
   } catch (err) {
-    console.error('[RelatÃ³rios] Erro ao gerar:', err);
-    mostrarToast('Erro ao gerar relatÃ³rio.', 'erro');
+    console.error('[Relatórios] Erro ao gerar:', err);
+    mostrarToast('Erro ao gerar relatório.', 'erro');
   } finally {
     mostrarLoading(false);
   }
 }
 
 // ============================================================
-// RENDERIZAÃ‡ÃƒO
+// RENDERIZAÇÃO
 // ============================================================
 
 function renderizarRelatorio(mes) {
@@ -108,8 +108,8 @@ function renderizarRelatorio(mes) {
   if (!pessoas.length) {
     container.innerHTML = `
       <div class="empty-state-grande">
-        <p>Nenhum lanÃ§amento com divisÃ£o de gastos em <strong>${formatarMes(mes)}</strong>.</p>
-        <p class="text-muted">Importe faturas e classifique lanÃ§amentos por pessoa para ver o relatÃ³rio.</p>
+        <p>Nenhum lançamento com divisão de gastos em <strong>${formatarMes(mes)}</strong>.</p>
+        <p class="text-muted">Importe faturas e classifique lançamentos por pessoa para ver o relatório.</p>
       </div>`;
     return;
   }
@@ -130,7 +130,7 @@ function renderizarRelatorio(mes) {
           <span class="mono rp-total-valor">${formatarMoeda(pessoa.total)}</span>
         </div>
         <button class="btn btn-sm btn-outline" onclick="copiarWhatsApp('${pid}','${mes}')">
-          ðŸ“‹ Copiar para WhatsApp
+          📋 Copiar para WhatsApp
         </button>
       </div>
       <div class="rp-body" id="rp-body-${pid}"></div>
@@ -148,7 +148,7 @@ function renderizarRelatorio(mes) {
         <table class="table table-sm">
           <tbody>${grupo.itens.map(item => `
             <tr>
-              <td class="mono text-muted" style="width:70px">${item.data?.slice(5).split('-').reverse().join('/') || 'â€”'}</td>
+              <td class="mono text-muted" style="width:70px">${item.data?.slice(5).split('-').reverse().join('/') || '—'}</td>
               <td>${item.descricao}${item.percentual < 100 ? ` <span class="text-muted">(${item.percentual}%)</span>` : ''}</td>
               <td class="mono valor-negativo" style="text-align:right">${formatarMoeda(item.valor)}</td>
             </tr>`).join('')}
@@ -174,19 +174,19 @@ function copiarWhatsApp(pessoaId, mes) {
   if (!pessoa) return;
 
   const nomeMes = formatarMes(mes);
-  let texto = `ðŸ’³ Fatura ${nomeMes} â€” Gastos de ${pessoa.nome}\n\n`;
+  let texto = `💳 Fatura ${nomeMes} — Gastos de ${pessoa.nome}\n\n`;
 
   Object.entries(pessoa.cartoes).forEach(([nomeCartao, grupo]) => {
     texto += `${nomeCartao}:\n`;
     grupo.itens.forEach(item => {
-      const data  = item.data?.slice(5).split('-').reverse().join('/') || 'â€”';
+      const data  = item.data?.slice(5).split('-').reverse().join('/') || '—';
       const desc  = item.descricao + (item.percentual < 100 ? ` (${item.percentual}%)` : '');
       const valor = formatarMoeda(item.valor);
       // Alinhamento com pontos
       const maxDesc = 35;
       const descPad = desc.length > maxDesc ? desc.substring(0, maxDesc) : desc;
       const pontos  = '.'.repeat(Math.max(2, maxDesc - descPad.length + 2));
-      texto += `â€¢ ${data} ${descPad}${pontos} ${valor}\n`;
+      texto += `• ${data} ${descPad}${pontos} ${valor}\n`;
     });
     texto += '\n';
   });
@@ -199,7 +199,8 @@ function copiarWhatsApp(pessoaId, mes) {
       // Fallback: mostrar em modal
       const modal = document.getElementById('modalTextoWhatsApp');
       if (modal) {
-        document.getElementById('textoWhatsApp').value = texto;
+        const ta = document.getElementById('textoWhatsApp');
+        if (ta) ta.value = texto;
         abrirModal('modalTextoWhatsApp');
       } else {
         prompt('Copie o texto abaixo:', texto);
@@ -217,3 +218,10 @@ function copiarTextoModal() {
   mostrarToast('Texto copiado!', 'sucesso');
   fecharModal('modalTextoWhatsApp');
 }
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.location.pathname.includes('relatorios.html')) {
+    inicializarPaginaRelatorios();
+  }
+});

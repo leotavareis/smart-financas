@@ -1,32 +1,32 @@
-﻿// ============================================================
-// APP.JS â€” UtilitÃ¡rios gerais, componentes de UI e FAB
-// Carregado em todas as pÃ¡ginas protegidas
+// ============================================================
+// APP.JS — Utilitários gerais, componentes de UI e FAB
+// Carregado em todas as páginas protegidas
 // ============================================================
 
-// â”€â”€ Estado global do mÃªs selecionado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Estado global do mês selecionado ─────────────────────────
 let mesSelecionado = getMesAtual();
 
 // ============================================================
-// FORMATAÃ‡ÃƒO
+// FORMATAÇÃO
 // ============================================================
 
-/** Formata nÃºmero para moeda BRL: 1234.5 â†’ "R$ 1.234,50" */
+/** Formata número para moeda BRL: 1234.5 → "R$ 1.234,50" */
 function formatarMoeda(valor) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
 }
 
 /** Formata data (string ISO, Date ou Timestamp) para dd/mm/aaaa */
 function formatarData(data) {
-  if (!data) return 'â€”';
+  if (!data) return '—';
   if (data && typeof data.toDate === 'function') data = data.toDate();
   const d = new Date(data);
-  if (isNaN(d)) return 'â€”';
+  if (isNaN(d)) return '—';
   return new Intl.DateTimeFormat('pt-BR').format(d);
 }
 
 /**
- * Normaliza string para busca: minÃºsculas, sem acentos, sem caracteres especiais.
- * Usado para match nas memÃ³rias de descriÃ§Ã£o.
+ * Normaliza string para busca: minúsculas, sem acentos, sem caracteres especiais.
+ * Usado para match nas memórias de descrição.
  */
 function normalizarString(str) {
   return (str || '')
@@ -39,11 +39,11 @@ function normalizarString(str) {
 }
 
 // ============================================================
-// TOAST â€” notificaÃ§Ãµes no canto inferior direito
+// TOAST — notificações no canto inferior direito
 // ============================================================
 
 /**
- * Exibe uma notificaÃ§Ã£o temporÃ¡ria.
+ * Exibe uma notificação temporária.
  * @param {string} mensagem
  * @param {'sucesso'|'erro'|'aviso'|'info'} tipo
  * @param {number} duracao  ms antes de sumir automaticamente
@@ -52,18 +52,18 @@ function mostrarToast(mensagem, tipo = 'info', duracao = 4000) {
   const container = document.getElementById('toastContainer');
   if (!container) return;
 
-  const icones = { sucesso: 'âœ“', erro: 'âœ•', aviso: 'âš ', info: 'â„¹' };
+  const icones = { sucesso: '✓', erro: '✕', aviso: '⚠', info: 'ℹ' };
 
   const toast = document.createElement('div');
   toast.className = `toast toast-${tipo}`;
   toast.innerHTML = `
     <span class="toast-icon">${icones[tipo] || icones.info}</span>
     <span class="toast-msg">${mensagem}</span>
-    <button class="toast-close" onclick="this.parentElement.remove()">âœ•</button>
+    <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
   `;
   container.appendChild(toast);
 
-  // Entra com animaÃ§Ã£o
+  // Entra com animação
   requestAnimationFrame(() => toast.classList.add('toast-visible'));
 
   // Sai automaticamente
@@ -74,7 +74,7 @@ function mostrarToast(mensagem, tipo = 'info', duracao = 4000) {
 }
 
 // ============================================================
-// LOADING â€” overlay de carregamento global
+// LOADING — overlay de carregamento global
 // ============================================================
 
 function mostrarLoading(mostrar) {
@@ -83,7 +83,7 @@ function mostrarLoading(mostrar) {
 }
 
 // ============================================================
-// MODAL â€” sistema reutilizÃ¡vel
+// MODAL — sistema reutilizável
 // ============================================================
 
 function abrirModal(id) {
@@ -105,9 +105,9 @@ document.addEventListener('click', e => {
 });
 
 /**
- * Mostra diÃ¡logo de confirmaÃ§Ã£o antes de excluir algo.
+ * Mostra diálogo de confirmação antes de excluir algo.
  * @param {string} mensagem
- * @param {Function} callback - Executado se o usuÃ¡rio confirmar
+ * @param {Function} callback - Executado se o usuário confirmar
  */
 function confirmarExclusao(mensagem, callback) {
   const id = 'modalConfirmacaoGlobal';
@@ -121,7 +121,7 @@ function confirmarExclusao(mensagem, callback) {
       <div class="modal-overlay"></div>
       <div class="modal-box modal-sm">
         <div class="modal-header">
-          <h3 class="modal-title">Confirmar exclusÃ£o</h3>
+          <h3 class="modal-title">Confirmar exclusão</h3>
         </div>
         <div class="modal-body">
           <p id="msgConfirmacao" style="color:var(--text-secondary);margin:0"></p>
@@ -136,7 +136,7 @@ function confirmarExclusao(mensagem, callback) {
 
   document.getElementById('msgConfirmacao').textContent = mensagem;
 
-  // Clonar botÃ£o para limpar listeners anteriores
+  // Clonar botão para limpar listeners anteriores
   const btn    = document.getElementById('btnConfirmarExclusaoGlobal');
   const novBtn = btn.cloneNode(true);
   btn.replaceWith(novBtn);
@@ -146,11 +146,11 @@ function confirmarExclusao(mensagem, callback) {
 }
 
 // ============================================================
-// SELETOR DE MÃŠS â€” header de todas as pÃ¡ginas
+// SELETOR DE MÊS — header de todas as páginas
 // ============================================================
 
 /**
- * Inicializa os botÃµes â€¹ e â€º do seletor de mÃªs.
+ * Inicializa os botões ‹ e › do seletor de mês.
  * @param {Function} callback - Chamado com o novo YYYY-MM ao mudar
  */
 function inicializarSeletorMes(callback) {
@@ -177,7 +177,7 @@ function inicializarSeletorMes(callback) {
 }
 
 // ============================================================
-// SIDEBAR & NAVEGAÃ‡ÃƒO
+// SIDEBAR & NAVEGAÇÃO
 // ============================================================
 
 function inicializarSidebar() {
@@ -202,7 +202,7 @@ function inicializarSidebar() {
 }
 
 // ============================================================
-// AVATAR DO USUÃRIO
+// AVATAR DO USUÁRIO
 // ============================================================
 
 function inicializarAvatar(user) {
@@ -211,12 +211,12 @@ function inicializarAvatar(user) {
   const email = document.getElementById('userEmail');
 
   if (foto && user.photoURL) { foto.src = user.photoURL; foto.alt = user.displayName; }
-  if (nome)  nome.textContent  = user.displayName?.split(' ')[0] || 'UsuÃ¡rio';
+  if (nome)  nome.textContent  = user.displayName?.split(' ')[0] || 'Usuário';
   if (email) email.textContent = user.email || '';
 }
 
 // ============================================================
-// FAB â€” botÃ£o flutuante de lanÃ§amento rÃ¡pido
+// FAB — botão flutuante de lançamento rápido
 // ============================================================
 
 function inicializarFAB() {
@@ -226,14 +226,14 @@ function inicializarFAB() {
   });
 }
 
-/** Popula selects do modal de lanÃ§amento rÃ¡pido */
+/** Popula selects do modal de lançamento rápido */
 async function carregarDadosLancamentoRapido() {
   try {
-    // CartÃµes
+    // Cartões
     const snapCartoes = await colecaoUsuario('cartoes').orderBy('nome').get();
     const selCartao   = document.getElementById('lr-cartao');
     if (selCartao) {
-      selCartao.innerHTML = '<option value="">â€” CartÃ£o â€”</option>';
+      selCartao.innerHTML = '<option value="">— Cartão —</option>';
       snapCartoes.forEach(d => {
         selCartao.innerHTML += `<option value="${d.id}">${d.data().nome}</option>`;
       });
@@ -250,7 +250,7 @@ async function carregarDadosLancamentoRapido() {
       });
     }
 
-    // Data padrÃ£o = hoje
+    // Data padrão = hoje
     const dtInput = document.getElementById('lr-data');
     if (dtInput) dtInput.value = new Date().toISOString().slice(0, 10);
 
@@ -259,7 +259,7 @@ async function carregarDadosLancamentoRapido() {
   }
 }
 
-/** Salva o lanÃ§amento rÃ¡pido no Firestore */
+/** Salva o lançamento rápido no Firestore */
 async function salvarLancamentoRapido(e) {
   e.preventDefault();
 
@@ -275,7 +275,7 @@ async function salvarLancamentoRapido(e) {
   const valor = parseFloat(valorStr.replace(',', '.'));
 
   if (!cartaoId || !descricao || isNaN(valor) || !data) {
-    mostrarToast('Preencha todos os campos obrigatÃ³rios.', 'aviso');
+    mostrarToast('Preencha todos os campos obrigatórios.', 'aviso');
     return;
   }
 
@@ -285,7 +285,7 @@ async function salvarLancamentoRapido(e) {
   try {
     mostrarLoading(true);
 
-    // Garante que existe uma fatura para esse cartÃ£o/mÃªs
+    // Garante que existe uma fatura para esse cartão/mês
     const faturaId = await obterOuCriarFatura(cartaoId, mes);
 
     await colecaoUsuario('lancamentos').add({
@@ -301,200 +301,45 @@ async function salvarLancamentoRapido(e) {
       criado_em     : firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    await atualizarTotalFatura(faturaId);
-
-    mostrarToast('LanÃ§amento salvo!', 'sucesso');
     fecharModal('modalLancamentoRapido');
-    document.getElementById('formLancamentoRapido')?.reset();
-
-    // Recarrega a pÃ¡gina atual se ela tiver essa funÃ§Ã£o
-    if (typeof carregarPagina === 'function') carregarPagina();
+    document.getElementById('formLancamentoRapido').reset();
+    mostrarToast('Lançamento salvo com sucesso!', 'sucesso');
+    
+    // Recarrega a página atual para refletir dados
+    if (window.location.pathname.includes('dashboard.html')) carregarDashboard(mesSelecionado);
 
   } catch (err) {
     console.error('[FAB] Erro ao salvar:', err);
-    mostrarToast('Erro ao salvar lanÃ§amento.', 'erro');
+    mostrarToast('Erro ao salvar lançamento.', 'erro');
   } finally {
     mostrarLoading(false);
   }
 }
 
-// ============================================================
-// HELPERS DE FATURA
-// ============================================================
-
-/**
- * Busca a fatura de um cartÃ£o/mÃªs ou cria uma nova se nÃ£o existir.
- * @returns {string} faturaId
- */
+/** Busca ou cria o documento da fatura para um cartão/mês */
 async function obterOuCriarFatura(cartaoId, mes) {
-  const snap = await colecaoUsuario('faturas')
-    .where('cartao_id', '==', cartaoId)
-    .where('mes', '==', mes)
-    .limit(1)
-    .get();
+  const coll = colecaoUsuario('faturas');
+  const snap = await coll.where('cartao_id', '==', cartaoId).where('mes', '==', mes).limit(1).get();
 
   if (!snap.empty) return snap.docs[0].id;
 
-  const nova = await colecaoUsuario('faturas').add({
-    cartao_id   : cartaoId,
+  const res = await coll.add({
+    cartao_id: cartaoId,
     mes,
-    total       : 0,
-    status      : 'aberta',
-    importada_em: firebase.firestore.FieldValue.serverTimestamp()
+    total    : 0,
+    status   : 'aberta',
+    criado_em: firebase.firestore.FieldValue.serverTimestamp()
   });
-  return nova.id;
+  return res.id;
 }
 
-/** Recalcula e atualiza o campo total de uma fatura. */
-async function atualizarTotalFatura(faturaId) {
-  const snap  = await colecaoUsuario('lancamentos').where('fatura_id', '==', faturaId).get();
-  const total = snap.docs.reduce((s, d) => s + (d.data().valor || 0), 0);
-  await colecaoUsuario('faturas').doc(faturaId).update({ total });
-}
-
-// ============================================================
-// FLOAT LABELS â€” inputs com label flutuante
-// ============================================================
-
-function inicializarFloatLabels() {
-  document.querySelectorAll('.fl-group input, .fl-group textarea, .fl-group select').forEach(inp => {
-    const update = () => {
-      const lbl = inp.closest('.fl-group')?.querySelector('label');
-      if (!lbl) return;
-      lbl.classList.toggle('floating', !!(inp.value || inp === document.activeElement));
-    };
-    inp.addEventListener('focus', update);
-    inp.addEventListener('blur',  update);
-    inp.addEventListener('input', update);
-    update();
-  });
-}
-
-// ============================================================
-// TOGGLE CAMPOS DE PARCELAMENTO
-// ============================================================
-
-function toggleCamposParcela(checkId, camposId) {
-  const chk    = document.getElementById(checkId);
-  const campos = document.getElementById(camposId);
-  if (!chk || !campos) return;
-
-  const sync = () => {
-    campos.style.display = chk.checked ? 'grid' : 'none';
-  };
-  chk.addEventListener('change', sync);
-  sync();
-}
-
-// ============================================================
-// GRÃFICO DE BARRAS â€” canvas vanilla (dashboard)
-// ============================================================
-
-/**
- * Desenha grÃ¡fico de barras duplas (receitas Ã— despesas).
- * @param {CanvasRenderingContext2D} ctx
- * @param {string[]} labels
- * @param {number[]} receitas
- * @param {number[]} despesas
- */
-function desenharGrafico(ctx, labels, receitas, despesas) {
-  const W = ctx.canvas.width;
-  const H = ctx.canvas.height;
-  const PAD = { top: 20, right: 20, bottom: 40, left: 60 };
-  const plotW = W - PAD.left - PAD.right;
-  const plotH = H - PAD.top  - PAD.bottom;
-
-  ctx.clearRect(0, 0, W, H);
-
-  const maxVal = Math.max(...receitas, ...despesas, 1) * 1.15;
-  const n      = labels.length;
-  const grpW   = plotW / n;
-  const barW   = Math.min(grpW * 0.3, 28);
-
-  // Linhas de grade
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-  ctx.lineWidth   = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = PAD.top + plotH - (plotH / 4) * i;
-    ctx.beginPath();
-    ctx.moveTo(PAD.left, y);
-    ctx.lineTo(PAD.left + plotW, y);
-    ctx.stroke();
-
-    // Valor no eixo Y
-    ctx.fillStyle  = 'rgba(255,255,255,0.35)';
-    ctx.font       = '10px DM Mono, monospace';
-    ctx.textAlign  = 'right';
-    const vlr = (maxVal / 4) * i;
-    ctx.fillText(
-      vlr >= 1000 ? `${(vlr/1000).toFixed(1)}k` : vlr.toFixed(0),
-      PAD.left - 6, y + 4
-    );
-  }
-
-  labels.forEach((lbl, i) => {
-    const baseX = PAD.left + grpW * i + grpW / 2;
-
-    // Barra receita (verde)
-    const hR = (receitas[i] / maxVal) * plotH;
-    ctx.fillStyle = '#22c55e';
-    arredondadoTopo(ctx, baseX - barW - 2, PAD.top + plotH - hR, barW, hR, 4);
-
-    // Barra despesa (vermelho)
-    const hD = (despesas[i] / maxVal) * plotH;
-    ctx.fillStyle = '#ef4444';
-    arredondadoTopo(ctx, baseX + 2, PAD.top + plotH - hD, barW, hD, 4);
-
-    // Label eixo X
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
-    ctx.font      = '11px DM Sans, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(lbl, baseX, PAD.top + plotH + 22);
-  });
-
-  // Legenda
-  ctx.fillStyle = '#22c55e';
-  ctx.fillRect(PAD.left, 6, 12, 10);
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  ctx.font      = '11px DM Sans';
-  ctx.textAlign = 'left';
-  ctx.fillText('Receitas', PAD.left + 16, 16);
-
-  ctx.fillStyle = '#ef4444';
-  ctx.fillRect(PAD.left + 90, 6, 12, 10);
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  ctx.fillText('Despesas', PAD.left + 106, 16);
-}
-
-/** Desenha retÃ¢ngulo com bordas arredondadas apenas no topo */
-function arredondadoTopo(ctx, x, y, w, h, r) {
-  if (h <= 0) return;
-  r = Math.min(r, h / 2, w / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h);
-  ctx.lineTo(x, y + h);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-  ctx.fill();
-}
-
-// ============================================================
-// INICIALIZAÃ‡ÃƒO GERAL â€” executada em todas as pÃ¡ginas
-// ============================================================
-
+// Configura o formulário do FAB no carregamento
 document.addEventListener('DOMContentLoaded', () => {
-  inicializarFloatLabels();
+  document.getElementById('formLancamentoRapido')?.addEventListener('submit', salvarLancamentoRapido);
+  const chkParcelado = document.getElementById('lr-parcelado');
+  const divParcelas  = document.getElementById('lr-campos-parcela');
+  chkParcelado?.addEventListener('change', () => divParcelas.style.display = chkParcelado.checked ? 'grid' : 'none');
+  
   inicializarSidebar();
   inicializarFAB();
-
-  // FormulÃ¡rio de lanÃ§amento rÃ¡pido
-  const formLR = document.getElementById('formLancamentoRapido');
-  if (formLR) {
-    formLR.addEventListener('submit', salvarLancamentoRapido);
-    toggleCamposParcela('lr-parcelado', 'lr-campos-parcela');
-  }
 });

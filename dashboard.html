@@ -9,10 +9,10 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
+        
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">SmartFinanças</div>
             <nav class="sidebar-nav">
-
                 <a href="dashboard.html" class="nav-item active">🏠 Dashboard</a>
                 <a href="receitas.html" class="nav-item ">📈 Receitas</a>
                 <a href="despesas.html" class="nav-item ">📉 Despesas fixas</a>
@@ -40,13 +40,14 @@
         <main class="main-content">
             <header class="page-header">
                 <div class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">â˜°</button>
+                    <button id="hamburger" class="btn btn-ghost">☰</button>
                     <h1>Dashboard</h1>
                 </div>
+                
                 <div class="month-selector">
-                    <button class="month-nav" id="prevMonth">â€¹</button>
+                    <button class="month-nav" id="prevMonth">‹</button>
                     <span id="monthDisplay">...</span>
-                    <button class="month-nav" id="nextMonth">â€º</button>
+                    <button class="month-nav" id="nextMonth">›</button>
                 </div>
             </header>
 
@@ -66,11 +67,11 @@
                 </div>
             </div>
 
-            <!-- GrÃ¡fico -->
+            <!-- Gráfico -->
             <div class="chart-container">
                 <div class="relatorio-header flex-between mb-4">
                     <h3>Receitas x Despesas</h3>
-                    <span class="text-muted small">Ãšltimos 6 meses</span>
+                    <span class="text-muted small">Últimos 6 meses</span>
                 </div>
                 <canvas id="canvasGrafico" width="800" height="300"></canvas>
             </div>
@@ -94,7 +95,7 @@
     <!-- Floating Action Button -->
     <button class="fab" id="fabBtn">+</button>
 
-    <!-- Modal Lançamento RÃ¡pido -->
+    <!-- Modal Lançamento Rápido -->
     <div class="modal-wrapper" id="modalLancamentoRapido">
         <div class="modal-overlay"></div>
         <div class="modal-box">
@@ -126,7 +127,7 @@
                     
                     <label class="checkbox-container" style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
                         <input type="checkbox" id="lr-parcelado"> 
-                        <span style="font-size:0.875rem">Ã‰ parcelado?</span>
+                        <span style="font-size:0.875rem">É parcelado?</span>
                     </label>
 
                     <div id="lr-campos-parcela" style="display:none;grid-template-columns:1fr 1fr;gap:12px">
@@ -181,7 +182,7 @@
                 const snapDesp = await colecaoUsuario('despesas_fixas').where('ativa', '==', true).get();
                 const totalDespFixas = snapDesp.docs.reduce((s,d) => s + (d.data().valor || 0), 0);
 
-                // 3. Faturas (Total de gastos em cartão no mÃªs)
+                // 3. Faturas (Total de gastos em cartão no mês)
                 const snapFaturas = await colecaoUsuario('faturas').where('mes', '==', mes).get();
                 const totalFaturas = snapFaturas.docs.reduce((s,d) => s + (d.data().total || 0), 0);
 
@@ -199,12 +200,12 @@
                 // 5. Resumo de parcelas
                 await carregarResumoParcelas();
 
-                // 6. GrÃ¡fico (Ãºltimos 6 meses)
+                // 6. Gráfico (últimos 6 meses)
                 await carregarGraficoGeral();
 
             } catch (err) {
                 console.error('[Dashboard] Erro:', err);
-                mostrarToast('Erro ao carregar dados do mÃªs.', 'erro');
+                mostrarToast('Erro ao carregar dados do mês.', 'erro');
             } finally {
                 mostrarLoading(false);
             }
@@ -218,7 +219,7 @@
             const hoje = new Date();
             const em5Dias = new Date(); em5Dias.setDate(hoje.getDate() + 5);
             
-            // Busca faturas abertas do mÃªs atual e seguinte
+            // Busca faturas abertas do mês atual e seguinte
             const snapFaturas = await colecaoUsuario('faturas')
                 .where('status', '==', 'aberta')
                 .get();
@@ -229,7 +230,7 @@
                 const c = cartoes[f.cartao_id];
                 if (!c) return;
 
-                // Calcula data de vencimento baseada no dia_vencimento do cartão e no mÃªs da fatura
+                // Calcula data de vencimento baseada no dia_vencimento do cartão e no mês da fatura
                 const [ano, mes] = f.mes.split('-').map(Number);
                 const venc = new Date(ano, mes - 1, c.dia_vencimento);
                 
@@ -287,12 +288,12 @@
             const receitas = [];
             const despesas = [];
 
-            // Gera labels para Ãºltimos 6 meses
+            // Gera labels para últimos 6 meses
             for (let i = 5; i >= 0; i--) {
                 const mStr = deslocarMes(getMesAtual(), -i);
                 labels.push(formatarMes(mStr).split(' ')[0]);
                 
-                // Busca em paralelo para cada mÃªs
+                // Busca em paralelo para cada mês
                 const snapRec = await colecaoUsuario('receitas').where('mes', '==', mStr).get();
                 const totalRec = snapRec.docs.reduce((s,d) => s + (d.data().valor || 0), 0);
                 

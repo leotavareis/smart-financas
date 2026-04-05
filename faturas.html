@@ -14,10 +14,10 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
+        
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">SmartFinanças</div>
             <nav class="sidebar-nav">
-
                 <a href="dashboard.html" class="nav-item ">🏠 Dashboard</a>
                 <a href="receitas.html" class="nav-item ">📈 Receitas</a>
                 <a href="despesas.html" class="nav-item ">📉 Despesas fixas</a>
@@ -45,7 +45,7 @@
         <main class="main-content">
             <header class="page-header">
                 <section class="page-title">
-                    <button id="hamburger" class="btn btn-ghost">â˜°</button>
+                    <button id="hamburger" class="btn btn-ghost">☰</button>
                     <h1>Importar Faturas em PDF</h1>
                 </section>
             </header>
@@ -60,7 +60,7 @@
                     </div>
                     <div class="fl-group">
                         <input type="month" id="mesImport" required>
-                        <label>MÃªs da Fatura</label>
+                        <label>Mês da Fatura</label>
                     </div>
                     <div class="upload-area">
                         <div class="drop-zone" id="dropZone">
@@ -89,7 +89,7 @@
 
             <!-- Listagem de Faturas Importadas -->
             <div class="card">
-                <h3 class="mb-4">Ãšltimas Faturas Importadas</h3>
+                <h3 class="mb-4">Últimas Faturas Importadas</h3>
                 <div id="listaFaturas">
                     <!-- JS popula aqui -->
                 </div>
@@ -123,10 +123,10 @@
 
                     <div class="fl-group">
                         <select id="cl-dono-principal" class="form-control" required></select>
-                        <label>ResponsÃ¡vel pelo Gasto</label>
+                        <label>Responsável pelo Gasto</label>
                     </div>
 
-                    <!-- RodapÃ© de Rateio (oculto por padrão) -->
+                    <!-- Rodapé de Rateio (oculto por padrão) -->
                     <div id="rateioArea" style="display:none; padding:16px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:20px;">
                         <div class="flex-between mb-2">
                             <span class="small text-muted">A soma das porcentagens deve ser 100%</span>
@@ -150,11 +150,11 @@
 
                     <label class="checkbox-container" style="display:flex;align-items:center;gap:8px">
                         <input type="checkbox" id="cl-lembrar"> 
-                        <span style="font-size:0.875rem">Sempre atribuir essa descrição a este responsÃ¡vel</span>
+                        <span style="font-size:0.875rem">Sempre atribuir essa descrição a este responsável</span>
                     </label>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-ghost" onclick="cancelarImportacao()">Pular do MÃªs</button>
+                    <button type="button" class="btn btn-ghost" onclick="cancelarImportacao()">Pular do Mês</button>
                     <button type="submit" class="btn btn-primary">Atribuir e Próximo</button>
                 </div>
             </form>
@@ -179,7 +179,7 @@
                                 <th>Data</th>
                                 <th>Descrição</th>
                                 <th style="text-align: right;">Valor</th>
-                                <th>ResponsÃ¡vel</th>
+                                <th>Responsável</th>
                             </tr>
                         </thead>
                         <tbody id="verFaturaCorpo"></tbody>
