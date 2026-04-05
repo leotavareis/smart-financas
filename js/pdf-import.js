@@ -35,7 +35,7 @@ async function inicializarPaginaFaturas() {
     // Abre o modal automaticamente se nenhuma IA estiver configurada
     const semChave = !obterChaveGemini() && !obterChaveOpenAI();
     if (semChave) {
-      setTimeout(() => abrirModal('modalGeminiKey'), 600);
+      setTimeout(abrirModalIAConfig, 600);
     }
   } catch (err) {
     console.error('[PDF] Erro ao inicializar:', err);
@@ -154,6 +154,16 @@ function renderizarStatusChave() {
   if (sub && chaveAtiva) sub.textContent = `Usando ${nomeIA} para ler o PDF.`;
 }
 
+/** Abre o modal de configuração de IA já com a seção correta visível */
+function abrirModalIAConfig() {
+  const provedor = obterProvedorIA();
+  const radio = document.getElementById(provedor === 'openai' ? 'radioOpenAI' : 'radioGemini');
+  if (radio) radio.checked = true;
+  document.getElementById('secaoGemini').style.display = provedor === 'openai' ? 'none' : 'block';
+  document.getElementById('secaoOpenAI').style.display = provedor === 'openai' ? 'block' : 'none';
+  abrirModalIAConfig();
+}
+
 function salvarChaveEFechar() {
   const provedor = document.querySelector('input[name="iaProvider"]:checked')?.value || 'gemini';
   localStorage.setItem(IA_PROVIDER_LS, provedor);
@@ -232,7 +242,7 @@ function iniciarImportacao(arquivo) {
   const chave    = provedor === 'openai' ? obterChaveOpenAI() : obterChaveGemini();
 
   if (!chave) {
-    abrirModal('modalGeminiKey');
+    abrirModalIAConfig();
     mostrarToast('Configure a IA antes de importar.', 'aviso');
     return;
   }
@@ -305,15 +315,19 @@ Regras OBRIGATÓRIAS:
 
     if (!resposta.ok) {
       const erro = await resposta.json().catch(() => ({}));
-      const msg  = erro?.error?.message || `Erro ${resposta.status}`;
+      const msg  = erro?.error?.message || `Erro HTTP ${resposta.status}`;
+      console.error('[Gemini] Erro da API:', resposta.status, erro);
 
-      if (resposta.status === 400 && msg.includes('API_KEY')) {
-        mostrarToast('Chave Gemini inválida. Configure novamente.', 'erro');
-        abrirModal('modalGeminiKey');
+      if (resposta.status === 400) {
+        mostrarToast(`Gemini: chave inválida ou requisição errada. ${msg}`, 'erro');
+        abrirModalIAConfig();
       } else if (resposta.status === 429) {
-        mostrarToast('Limite da API Gemini atingido. Aguarde alguns minutos.', 'aviso');
+        mostrarToast(`Gemini: limite atingido. ${msg}`, 'aviso');
+      } else if (resposta.status === 403) {
+        mostrarToast('Gemini: chave sem permissão. Gere uma nova em aistudio.google.com', 'erro');
+        abrirModalIAConfig();
       } else {
-        mostrarToast(`Erro Gemini: ${msg}`, 'erro');
+        mostrarToast(`Erro Gemini (${resposta.status}): ${msg}`, 'erro');
       }
       return;
     }
@@ -464,14 +478,25 @@ ${texto}`;
 
     if (!resposta.ok) {
       const erro = await resposta.json().catch(() => ({}));
-      const msg  = erro?.error?.message || `Erro ${resposta.status}`;
+      const msg  = erro?.error?.message || `Erro HTTP ${resposta.status}`;
+      console.error('[OpenAI] Erro da API:', resposta.status, erro);
+
       if (resposta.status === 401) {
-        mostrarToast('Chave OpenAI inválida. Configure novamente.', 'erro');
-        abrirModal('modalGeminiKey');
+        mostrarToast('OpenAI: chave inválida. Verifique em platform.openai.com/api-keys', 'erro');
+        abrirModalIAConfig();
       } else if (resposta.status === 429) {
-        mostrarToast('Limite da API OpenAI atingido. Aguarde alguns minutos.', 'aviso');
+        // 429 pode ser rate limit OU sem créditos — mostrar mensagem real da API
+        const semCredito = msg.toLowerCase().includes('quota') ||
+                           msg.toLowerCase().includes('billing') ||
+                           msg.toLowerCase().includes('credit') ||
+                           msg.toLowerCase().includes('insufficient');
+        if (semCredito) {
+          mostrarToast('OpenAI: sem créditos. Adicione billing em platform.openai.com/settings/billing', 'erro');
+        } else {
+          mostrarToast(`OpenAI: ${msg}`, 'aviso');
+        }
       } else {
-        mostrarToast(`Erro OpenAI: ${msg}`, 'erro');
+        mostrarToast(`Erro OpenAI (${resposta.status}): ${msg}`, 'erro');
       }
       return;
     }
