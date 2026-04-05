@@ -1,17 +1,21 @@
 // ============================================================
-// PDF-IMPORT.JS — Importação e classificação de faturas em PDF
-// Depende de: PDF.js (CDN), app.js, auth.js
+// PDF-IMPORT.JS — Importação de faturas via Google Gemini AI
+// O PDF é enviado em base64 para o Gemini, que extrai os
+// lançamentos e retorna JSON estruturado. Sem regex frágil.
+// Depende de: app.js, auth.js
 // ============================================================
 
 const estadoImport = {
   cartaoId      : null,
   mes           : null,
-  linhas        : [],   // Lançamentos brutos extraídos do PDF
-  classificados : [],   // Cópia com dono/parcelas preenchidos
+  classificados : [],   // Lançamentos prontos para revisão/salvar
   indexAtual    : 0,    // Índice no loop de classificação manual
-  pessoas       : [],   // Cache carregado uma vez
-  cartoes       : []    // Cache carregado uma vez
+  pessoas       : [],   // Cache
+  cartoes       : []    // Cache
 };
+
+// Chave Gemini salva no localStorage (não vai para o Firestore)
+const GEMINI_KEY_LS = 'smartfinancas_gemini_key';
 
 // ============================================================
 // INICIALIZAÇÃO DA PÁGINA
@@ -20,12 +24,10 @@ const estadoImport = {
 async function inicializarPaginaFaturas() {
   mostrarLoading(true);
   try {
-    await Promise.all([
-      carregarCartoesSelect(),
-      carregarPessoasEstado()
-    ]);
+    await Promise.all([carregarCartoesSelect(), carregarPessoasEstado()]);
     configurarDropZone();
     configurarModalClassificacao();
+    renderizarStatusChave();
     await listarFaturasExistentes();
   } catch (err) {
     console.error('[PDF] Erro ao inicializar:', err);
@@ -35,7 +37,7 @@ async function inicializarPaginaFaturas() {
   }
 }
 
-// ── Carregamento de dados ────────────────────────────────────
+// ── Carregamento de dados ─────────────────────────────────────
 
 async function carregarCartoesSelect() {
   const snap = await colecaoUsuario('cartoes').orderBy('nome').get();
@@ -53,7 +55,7 @@ async function carregarPessoasEstado() {
   const snap = await colecaoUsuario('pessoas').get();
   estadoImport.pessoas = snap.docs
     .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => p.nome); // Ignora pessoas sem nome ainda
+    .filter(p => p.nome);
 }
 
 async function listarFaturasExistentes() {
@@ -100,6 +102,52 @@ async function listarFaturasExistentes() {
 }
 
 // ============================================================
+// GERENCIAMENTO DA CHAVE GEMINI
+// ============================================================
+
+function obterChaveGemini() {
+  return localStorage.getItem(GEMINI_KEY_LS) || '';
+}
+
+function salvarChaveGemini(chave) {
+  if (chave) localStorage.setItem(GEMINI_KEY_LS, chave.trim());
+  else localStorage.removeItem(GEMINI_KEY_LS);
+}
+
+/** Mostra no card de configuração se a chave já está salva */
+function renderizarStatusChave() {
+  const chave  = obterChaveGemini();
+  const status = document.getElementById('geminiKeyStatus');
+  const input  = document.getElementById('geminiKeyInput');
+  if (!status) return;
+
+  if (chave) {
+    status.innerHTML = `
+      <span style="color:var(--success)">✓ Chave Gemini configurada</span>
+      <button class="btn btn-sm btn-ghost" onclick="removerChaveGemini()">Remover</button>`;
+    if (input) input.value = '';
+  } else {
+    status.innerHTML = `<span style="color:var(--warning)">⚠ Chave Gemini não configurada</span>`;
+  }
+}
+
+function salvarChaveEFechar() {
+  const input = document.getElementById('geminiKeyInput');
+  const chave = input?.value.trim();
+  if (!chave) { mostrarToast('Cole a chave antes de salvar.', 'aviso'); return; }
+  salvarChaveGemini(chave);
+  renderizarStatusChave();
+  fecharModal('modalGeminiKey');
+  mostrarToast('Chave Gemini salva!', 'sucesso');
+}
+
+function removerChaveGemini() {
+  salvarChaveGemini('');
+  renderizarStatusChave();
+  mostrarToast('Chave removida.', 'info');
+}
+
+// ============================================================
 // DRAG & DROP + UPLOAD
 // ============================================================
 
@@ -117,7 +165,6 @@ function configurarDropZone() {
   ['dragleave', 'dragend'].forEach(ev =>
     zone.addEventListener(ev, () => zone.classList.remove('dragover'))
   );
-
   zone.addEventListener('drop', e => {
     e.preventDefault();
     zone.classList.remove('dragover');
@@ -128,9 +175,10 @@ function configurarDropZone() {
 
   inp.addEventListener('change', () => {
     if (inp.files[0]) iniciarImportacao(inp.files[0]);
+    inp.value = ''; // permite re-selecionar o mesmo arquivo
   });
 
-  // Preenche mês padrão
+  // Mês padrão
   const mesInput = document.getElementById('mesImport');
   if (mesInput && !mesInput.value) mesInput.value = getMesAtual();
 }
@@ -140,66 +188,165 @@ function iniciarImportacao(arquivo) {
   estadoImport.mes      = document.getElementById('mesImport')?.value;
 
   if (!estadoImport.cartaoId) {
-    mostrarToast('Selecione o cartão antes de importar.', 'aviso');
-    return;
+    mostrarToast('Selecione o cartão antes de importar.', 'aviso'); return;
   }
   if (!estadoImport.mes) {
-    mostrarToast('Selecione o mês antes de importar.', 'aviso');
+    mostrarToast('Selecione o mês antes de importar.', 'aviso'); return;
+  }
+
+  const chave = obterChaveGemini();
+  if (!chave) {
+    abrirModal('modalGeminiKey');
+    mostrarToast('Configure sua chave Gemini para usar a IA.', 'aviso');
     return;
   }
-  processarPDF(arquivo);
+
+  processarComGemini(arquivo, chave);
 }
 
 // ============================================================
-// PROCESSAMENTO DO PDF
+// EXTRAÇÃO VIA GEMINI AI
 // ============================================================
 
-async function processarPDF(arquivo) {
+async function processarComGemini(arquivo, chaveApi) {
   mostrarLoading(true);
   const progressoEl = document.getElementById('progressoImport');
   if (progressoEl) progressoEl.style.display = 'block';
-  setProgresso('Lendo PDF…', 10);
+  setProgresso('Lendo arquivo PDF…', 15);
 
   try {
-    const arrayBuffer = await arquivo.arrayBuffer();
-    const pdfDoc      = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let textoCompleto = '';
+    // 1. Converter PDF para base64
+    const base64 = await arquivoParaBase64(arquivo);
+    setProgresso('Enviando para a IA Gemini…', 35);
 
-    for (let i = 1; i <= pdfDoc.numPages; i++) {
-      const page    = await pdfDoc.getPage(i);
-      const conteudo = await page.getTextContent();
-      textoCompleto += conteudo.items.map(t => t.str).join(' ') + '\n';
-      setProgresso(`Lendo página ${i} de ${pdfDoc.numPages}…`, 10 + (i / pdfDoc.numPages) * 40);
+    // 2. Montar prompt estruturado
+    const prompt = `Você é um assistente financeiro. Analise esta fatura de cartão de crédito em PDF.
+
+Extraia TODOS os lançamentos/compras individuais e retorne SOMENTE um JSON válido, sem markdown, sem explicações, sem texto antes ou depois.
+
+Formato obrigatório:
+{
+  "lancamentos": [
+    {
+      "data": "DD/MM",
+      "descricao": "Nome do estabelecimento ou serviço",
+      "valor": 123.45
     }
+  ]
+}
 
-    setProgresso('Identificando lançamentos…', 55);
-    const linhas = parsearTextoFatura(textoCompleto);
+Regras importantes:
+- Inclua TODAS as compras e serviços
+- NÃO inclua: total da fatura, pagamentos anteriores, créditos, encargos, IOF, multas
+- O campo "valor" deve ser número positivo (sem R$, sem vírgula como decimal — use ponto)
+- O campo "data" deve ser DD/MM (dia e mês)
+- A "descricao" deve ser limpa e legível
+- Se houver indicação de parcela (ex: "2/6"), inclua no final da descrição`;
 
-    if (!linhas.length) {
-      mostrarToast('Nenhum lançamento encontrado no PDF. Verifique o arquivo.', 'aviso');
-      if (progressoEl) progressoEl.style.display = 'none';
-      mostrarLoading(false);
+    // 3. Chamar Gemini API
+    const resposta = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${chaveApi}`,
+      {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: 'application/pdf', data: base64 } },
+              { text: prompt }
+            ]
+          }],
+          generationConfig: {
+            temperature    : 0.1,   // Respostas determinísticas
+            responseMimeType: 'application/json'
+          }
+        })
+      }
+    );
+
+    setProgresso('Processando resposta da IA…', 70);
+
+    if (!resposta.ok) {
+      const erro = await resposta.json().catch(() => ({}));
+      const msg  = erro?.error?.message || `Erro ${resposta.status}`;
+
+      if (resposta.status === 400 && msg.includes('API_KEY')) {
+        mostrarToast('Chave Gemini inválida. Configure novamente.', 'erro');
+        abrirModal('modalGeminiKey');
+      } else if (resposta.status === 429) {
+        mostrarToast('Limite da API Gemini atingido. Aguarde alguns minutos.', 'aviso');
+      } else {
+        mostrarToast(`Erro Gemini: ${msg}`, 'erro');
+      }
       return;
     }
 
-    setProgresso(`${linhas.length} lançamentos encontrados. Buscando na memória…`, 70);
-    estadoImport.linhas = linhas;
+    const dados    = await resposta.json();
+    const textoIA  = dados?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    setProgresso('Interpretando lançamentos…', 85);
+
+    // 4. Parsear JSON retornado pela IA
+    let lancamentosIA;
+    try {
+      // Remove possíveis marcadores de markdown que a IA às vezes adiciona
+      const jsonLimpo = textoIA.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed    = JSON.parse(jsonLimpo);
+      lancamentosIA   = parsed.lancamentos || parsed;
+      if (!Array.isArray(lancamentosIA)) throw new Error('Formato inesperado');
+    } catch (parseErr) {
+      console.error('[Gemini] Resposta bruta:', textoIA);
+      mostrarToast('A IA retornou um formato inesperado. Tente novamente.', 'erro');
+      return;
+    }
+
+    if (!lancamentosIA.length) {
+      mostrarToast('Nenhum lançamento encontrado pela IA. Verifique o PDF.', 'aviso');
+      return;
+    }
+
+    setProgresso(`${lancamentosIA.length} lançamentos extraídos!`, 100);
+
+    // 5. Converter para formato interno e buscar memórias
+    const linhas = lancamentosIA.map(l => ({
+      descricao     : (l.descricao || '').substring(0, 80),
+      valor         : parseFloat(String(l.valor).replace(',', '.')) || 0,
+      data          : normalizarDataIA(l.data, estadoImport.mes),
+      dono          : null,
+      parcela_atual : extrairParcelaAtual(l.descricao),
+      total_parcelas: extrairTotalParcelas(l.descricao),
+      classificacao : 'manual'
+    })).filter(l => l.valor > 0 && l.valor < 99_999);
+
     await aplicarMemoriaDescricoes(linhas);
 
-    setProgresso('Pronto!', 100);
     setTimeout(() => {
       if (progressoEl) progressoEl.style.display = 'none';
-      estadoImport.classificados = JSON.parse(JSON.stringify(estadoImport.linhas));
+      estadoImport.classificados = linhas;
       iniciarClassificacaoManual();
     }, 600);
 
   } catch (err) {
-    console.error('[PDF] Erro ao processar:', err);
-    mostrarToast('Erro ao processar o PDF. Tente outro arquivo.', 'erro');
+    console.error('[Gemini] Erro:', err);
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      mostrarToast('Sem conexão com a internet ou CORS bloqueado.', 'erro');
+    } else {
+      mostrarToast('Erro ao processar com IA. Tente novamente.', 'erro');
+    }
     if (progressoEl) progressoEl.style.display = 'none';
   } finally {
     mostrarLoading(false);
   }
+}
+
+/** Converte File para string base64 (sem prefixo data:...) */
+function arquivoParaBase64(arquivo) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(arquivo);
+  });
 }
 
 function setProgresso(msg, pct) {
@@ -209,88 +356,27 @@ function setProgresso(msg, pct) {
   if (txt) txt.textContent = msg;
 }
 
-// ============================================================
-// PARSER DE TEXTO
-// ============================================================
+/** Converte "DD/MM" da IA para "YYYY-MM-DD" usando o mês da fatura como referência */
+function normalizarDataIA(dataStr, mesFatura) {
+  if (!dataStr) return mesFatura ? mesFatura + '-01' : new Date().toISOString().slice(0, 10);
 
-/**
- * Extrai lançamentos do texto bruto da fatura.
- * Suporta formatos: "DD/MM DESCRIÇÃO R$ 1.234,56" e variações.
- */
-function parsearTextoFatura(texto) {
-  const resultados = [];
-
-  const padroes = [
-    // Com "R$" explícito
-    /(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+R\$\s*([\d.]+,\d{2})/gi,
-    // Sem "R$" — valor no padrão brasileiro
-    /(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+(\d{1,3}(?:\.\d{3})*,\d{2})\b/gi,
-  ];
-
-  const linhas = texto.split('\n');
-
-  for (const linha of linhas) {
-    const limpa = linha.trim();
-    if (!limpa) continue;
-
-    for (const padrao of padroes) {
-      padrao.lastIndex = 0;
-      let match;
-      while ((match = padrao.exec(limpa)) !== null) {
-        const dataStr  = match[1];
-        const desc     = limparDescricao(match[2]);
-        const valorStr = match[3].replace(/\./g, '').replace(',', '.');
-        const valor    = parseFloat(valorStr);
-
-        if (!desc || isNaN(valor) || valor <= 0 || valor > 99_999) continue;
-        if (isLinhaTotalizadora(desc)) continue;
-
-        // Evita duplicatas dentro da mesma extração
-        const jaExiste = resultados.some(r =>
-          r.descricao === desc && Math.abs(r.valor - valor) < 0.01
-        );
-        if (jaExiste) continue;
-
-        resultados.push({
-          descricao     : desc,
-          valor,
-          data          : normalizarData(dataStr),
-          dono          : null,  // null = precisa de classificação
-          parcela_atual : 1,
-          total_parcelas: 1,
-          classificacao : 'manual',
-          lembrar       : false
-        });
-      }
-    }
-  }
-
-  resultados.sort((a, b) => a.data.localeCompare(b.data));
-  return resultados;
-}
-
-function limparDescricao(str) {
-  return (str || '')
-    .replace(/\*+\d{4}/g, '')   // número mascarado *1234
-    .replace(/\b\d{4}\b/g, '')  // sequências de 4 dígitos soltos
-    .replace(/\s{2,}/g, ' ')
-    .trim()
-    .substring(0, 80);
-}
-
-function isLinhaTotalizadora(desc) {
-  const palavras = ['total', 'subtotal', 'saldo', 'pagamento', 'credito', 'limite', 'vencimento'];
-  return palavras.some(p => normalizarString(desc).startsWith(p));
-}
-
-function normalizarData(str) {
-  const p   = str.split('/');
-  const dia = p[0].padStart(2, '0');
-  const mes = p[1].padStart(2, '0');
-  const ano = p[2]
-    ? (p[2].length === 2 ? '20' + p[2] : p[2])
-    : new Date().getFullYear().toString();
+  const partes = String(dataStr).split('/');
+  const dia    = (partes[0] || '01').padStart(2, '0');
+  const mes    = (partes[1] || (mesFatura?.split('-')[1] || '01')).padStart(2, '0');
+  const ano    = partes[2] || (mesFatura?.split('-')[0] || new Date().getFullYear().toString());
   return `${ano}-${mes}-${dia}`;
+}
+
+/** Detecta "2/6" ou "02/06" na descrição e retorna parcela atual */
+function extrairParcelaAtual(desc) {
+  const m = String(desc || '').match(/\b(\d{1,2})\/(\d{1,2})\s*$/);
+  return m ? parseInt(m[1]) : 1;
+}
+
+/** Detecta "2/6" na descrição e retorna total de parcelas */
+function extrairTotalParcelas(desc) {
+  const m = String(desc || '').match(/\b\d{1,2}\/(\d{1,2})\s*$/);
+  return m ? parseInt(m[1]) : 1;
 }
 
 // ============================================================
@@ -310,12 +396,12 @@ async function aplicarMemoriaDescricoes(linhas) {
       });
       if (match) {
         linha.dono           = match.dono;
-        linha.total_parcelas = match.total_parcelas || 1;
+        linha.total_parcelas = match.total_parcelas || linha.total_parcelas || 1;
         linha.classificacao  = 'automatico';
       }
     }
   } catch (err) {
-    console.warn('[Memória] Não foi possível carregar:', err);
+    console.warn('[Memória] Erro ao carregar:', err);
   }
 }
 
@@ -343,7 +429,6 @@ function configurarModalClassificacao() {
   document.getElementById('btnAddRateio')
     ?.addEventListener('click', adicionarLinhaRateio);
 
-  // Toggle rateio ao mudar seleção de dono
   document.getElementById('cl-dono-principal')
     ?.addEventListener('change', e => {
       const area = document.getElementById('rateioArea');
@@ -351,19 +436,12 @@ function configurarModalClassificacao() {
       const mostrar = e.target.value === 'rateio';
       area.style.display = mostrar ? 'block' : 'none';
       if (mostrar && !document.querySelector('.rateio-linha')) {
-        adicionarLinhaRateio();
-        adicionarLinhaRateio();
+        adicionarLinhaRateio(); adicionarLinhaRateio();
       }
     });
 }
 
 function iniciarClassificacaoManual() {
-  // Encontra o primeiro item sem dono
-  const pendentes = estadoImport.classificados.filter(l => !l.dono);
-  if (!pendentes.length) {
-    renderizarRevisao();
-    return;
-  }
   avancarParaProxima();
 }
 
@@ -384,10 +462,9 @@ function avancarParaProxima() {
   abrirModal('modalClassificacao');
 }
 
-/** Pular item — marca com dono "eu" e avança */
 function pularClassificacao() {
   const i = estadoImport.indexAtual;
-  estadoImport.classificados[i].dono = [{ pessoa_id: 'eu', percentual: 100 }];
+  estadoImport.classificados[i].dono          = [{ pessoa_id: 'eu', percentual: 100 }];
   estadoImport.classificados[i].classificacao = 'pulado';
   fecharModal('modalClassificacao');
   setTimeout(avancarParaProxima, 200);
@@ -428,8 +505,7 @@ function adicionarLinhaRateio() {
     <input type="number" class="form-control rateio-pct"
            placeholder="%" min="1" max="100" value="50">
     <button type="button" class="btn btn-sm btn-danger"
-            onclick="this.closest('.rateio-linha').remove()">✕</button>
-  `;
+            onclick="this.closest('.rateio-linha').remove()">✕</button>`;
   document.getElementById('rateioLinhas').appendChild(div);
 }
 
@@ -442,7 +518,6 @@ function salvarClassificacaoAtual(e) {
   const parcAtual = parseInt(document.getElementById('cl-parcela-atual').value)  || 1;
   const lembrar  = document.getElementById('cl-lembrar').checked;
 
-  // Construir array dono
   let dono;
   if (donoSel === 'rateio') {
     const linhas = document.querySelectorAll('.rateio-linha');
@@ -452,7 +527,7 @@ function salvarClassificacaoAtual(e) {
     }));
     const soma = dono.reduce((s, d) => s + d.percentual, 0);
     if (Math.abs(soma - 100) > 0.5) {
-      mostrarToast(`Soma dos percentuais é ${soma.toFixed(0)}%. Deve ser 100%.`, 'aviso');
+      mostrarToast(`Soma é ${soma.toFixed(0)}%. Precisa ser 100%.`, 'aviso');
       return;
     }
   } else {
@@ -494,7 +569,8 @@ function renderizarRevisao() {
       <table class="table">
         <thead>
           <tr>
-            <th>Data</th><th>Descrição</th><th style="text-align:right">Valor</th>
+            <th>Data</th><th>Descrição</th>
+            <th style="text-align:right">Valor</th>
             <th>Responsável</th><th>Parcelas</th><th>Origem</th>
           </tr>
         </thead>
@@ -514,10 +590,10 @@ function renderizarRevisao() {
   const tbody = document.getElementById('tbodyRevisao');
   estadoImport.classificados.forEach(l => {
     total += l.valor;
-    const dataFmt    = l.data ? l.data.slice(5).split('-').reverse().join('/') : '—';
-    const donoTexto  = _formatarDonoTexto(l.dono);
-    const parc       = l.total_parcelas > 1 ? `${l.parcela_atual}/${l.total_parcelas}` : '—';
-    const origemBadge = l.classificacao === 'automatico'
+    const dataFmt   = l.data ? l.data.slice(5).split('-').reverse().join('/') : '—';
+    const donoTexto = _formatarDonoTexto(l.dono);
+    const parc      = l.total_parcelas > 1 ? `${l.parcela_atual}/${l.total_parcelas}` : '—';
+    const badge     = l.classificacao === 'automatico'
       ? '<span class="badge badge-info">Auto</span>'
       : l.classificacao === 'pulado'
         ? '<span class="badge badge-warning">Pulado</span>'
@@ -531,7 +607,7 @@ function renderizarRevisao() {
         <td class="mono valor-negativo" style="text-align:right">${formatarMoeda(l.valor)}</td>
         <td>${donoTexto}</td>
         <td class="mono small">${parc}</td>
-        <td>${origemBadge}</td>
+        <td>${badge}</td>
       </tr>`;
   });
 
@@ -578,15 +654,12 @@ async function confirmarImportacao() {
 
     const total = estadoImport.classificados.reduce((s, l) => s + l.valor, 0);
     batch.update(userRef.collection('faturas').doc(faturaId), {
-      total,
-      status      : 'fechada',
-      importada_em: ts
+      total, status: 'fechada', importada_em: ts
     });
 
     await batch.commit();
-
-    mostrarToast(`${estadoImport.classificados.length} lançamentos salvos com sucesso!`, 'sucesso');
-    cancelarImportacao(); // Limpa estado
+    mostrarToast(`${estadoImport.classificados.length} lançamentos salvos!`, 'sucesso');
+    cancelarImportacao();
     await listarFaturasExistentes();
 
   } catch (err) {
@@ -598,14 +671,10 @@ async function confirmarImportacao() {
 }
 
 function cancelarImportacao() {
-  estadoImport.linhas        = [];
   estadoImport.classificados = [];
   estadoImport.indexAtual    = 0;
   const secao = document.getElementById('secaoRevisao');
   if (secao) secao.style.display = 'none';
-  // Limpa o input de arquivo para permitir re-importar o mesmo arquivo
-  const inp = document.getElementById('inputPDF');
-  if (inp) inp.value = '';
 }
 
 // ============================================================
@@ -615,14 +684,13 @@ function cancelarImportacao() {
 async function verLancamentosFatura(faturaId, mes) {
   mostrarLoading(true);
   try {
-    const snap  = await colecaoUsuario('lancamentos')
+    const snap = await colecaoUsuario('lancamentos')
       .where('fatura_id', '==', faturaId)
       .orderBy('data', 'asc')
       .get();
 
-    const modal = document.getElementById('modalVerFatura');
     const corpo = document.getElementById('verFaturaCorpo');
-    if (!modal || !corpo) return;
+    if (!corpo) return;
 
     document.getElementById('verFaturaTitulo').textContent = formatarMes(mes);
 
@@ -657,19 +725,16 @@ async function verLancamentosFatura(faturaId, mes) {
 
 async function excluirFatura(faturaId) {
   confirmarExclusao(
-    'Excluir esta fatura e todos os seus lançamentos? Esta ação não pode ser desfeita.',
+    'Excluir esta fatura e todos os seus lançamentos?',
     async () => {
       mostrarLoading(true);
       try {
         const userRef = db.collection('usuarios').doc(auth.currentUser.uid);
         const batch   = db.batch();
-
-        const snap = await colecaoUsuario('lancamentos')
-          .where('fatura_id', '==', faturaId)
-          .get();
+        const snap    = await colecaoUsuario('lancamentos')
+          .where('fatura_id', '==', faturaId).get();
         snap.forEach(d => batch.delete(userRef.collection('lancamentos').doc(d.id)));
         batch.delete(userRef.collection('faturas').doc(faturaId));
-
         await batch.commit();
         mostrarToast('Fatura excluída.', 'sucesso');
         await listarFaturasExistentes();
