@@ -377,7 +377,8 @@ function inicializarFloatLabels() {
         inp.value                              ||  // campo preenchido
         inp === document.activeElement         ||  // campo focado
         SEMPRE_FLUTUANTE.includes(inp.type)    ||  // date, month, color, etc.
-        inp.placeholder                            // tem placeholder visível
+        inp.placeholder                        ||  // tem placeholder visível
+        inp.tagName === 'SELECT'                   // select sempre mostra texto
       );
       lbl.classList.toggle('floating', temValor);
     };
