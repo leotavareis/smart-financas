@@ -29,6 +29,11 @@ async function inicializarPaginaFaturas() {
     configurarModalClassificacao();
     renderizarStatusChave();
     await listarFaturasExistentes();
+
+    // Abre o modal de chave automaticamente se ainda não estiver configurada
+    if (!obterChaveGemini()) {
+      setTimeout(() => abrirModal('modalGeminiKey'), 600);
+    }
   } catch (err) {
     console.error('[PDF] Erro ao inicializar:', err);
     mostrarToast('Erro ao carregar a página de faturas.', 'erro');

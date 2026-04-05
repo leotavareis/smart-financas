@@ -48,8 +48,13 @@
         <div class="card mb-6">
             <div class="flex-between mb-4">
                 <h3>Configurações</h3>
-                <div id="geminiKeyStatus"></div>
+                <button class="btn btn-sm btn-primary" onclick="abrirModal('modalGeminiKey')">
+                    ⚙️ Chave Gemini API
+                </button>
             </div>
+
+            <!-- Status da chave -->
+            <div id="geminiKeyStatus" style="margin-bottom:16px"></div>
 
             <div class="stats-grid" style="grid-template-columns:1.5fr 1fr;gap:20px;align-items:end">
                 <div class="fl-group mb-0">
