@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // PDF-IMPORT.JS — Importação e classificação de faturas em PDF
 // Depende de: PDF.js (cdnjs), app.js, auth.js
 // ============================================================
@@ -701,9 +701,4 @@ async function excluirFatura(faturaId) {
   });
 }
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', () => {
-  if (window.location.pathname.includes('faturas.html')) {
-    inicializarPaginaFaturas();
-  }
-});
+

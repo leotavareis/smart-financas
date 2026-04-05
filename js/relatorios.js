@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // RELATORIOS.JS — Relatório de cobrança por pessoa
 // Depende de: app.js, auth.js
 // ============================================================
@@ -219,9 +219,4 @@ function copiarTextoModal() {
   fecharModal('modalTextoWhatsApp');
 }
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', () => {
-  if (window.location.pathname.includes('relatorios.html')) {
-    inicializarPaginaRelatorios();
-  }
-});
+

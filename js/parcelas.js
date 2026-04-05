@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // PARCELAS.JS — Linha do tempo de parcelamentos
 // Depende de: app.js, auth.js
 // ============================================================
@@ -208,9 +208,4 @@ function diferencaMeses(de, ate) {
   return (aB - aA) * 12 + (mB - mA);
 }
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', () => {
-  if (window.location.pathname.includes('parcelamentos.html')) {
-    inicializarPaginaParcelas();
-  }
-});
+
