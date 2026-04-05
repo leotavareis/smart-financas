@@ -225,28 +225,28 @@ async function processarComGemini(arquivo, chaveApi) {
     setProgresso('Enviando para a IA Gemini…', 35);
 
     // 2. Montar prompt estruturado
-    const prompt = `Você é um assistente financeiro. Analise esta fatura de cartão de crédito em PDF.
+    const prompt = `Analise esta fatura de cartão de crédito em PDF e extraia todos os lançamentos.
 
-Extraia TODOS os lançamentos/compras individuais e retorne SOMENTE um JSON válido, sem markdown, sem explicações, sem texto antes ou depois.
+Retorne SOMENTE um JSON válido, sem markdown, sem texto antes ou depois.
 
-Formato obrigatório:
+Formato:
 {
   "lancamentos": [
     {
       "data": "DD/MM",
-      "descricao": "Nome do estabelecimento ou serviço",
+      "descricao": "EXATAMENTE como aparece na fatura, sem alterar nada",
       "valor": 123.45
     }
   ]
 }
 
-Regras importantes:
-- Inclua TODAS as compras e serviços
-- NÃO inclua: total da fatura, pagamentos anteriores, créditos, encargos, IOF, multas
-- O campo "valor" deve ser número positivo (sem R$, sem vírgula como decimal — use ponto)
-- O campo "data" deve ser DD/MM (dia e mês)
-- A "descricao" deve ser limpa e legível
-- Se houver indicação de parcela (ex: "2/6"), inclua no final da descrição`;
+Regras OBRIGATÓRIAS:
+- Copie a descrição EXATAMENTE como está escrita na fatura — não traduza, não resuma, não limpe
+- Inclua TODOS os lançamentos de compra
+- EXCLUA: total da fatura, pagamentos anteriores, créditos, encargos, IOF, juros, multas
+- "valor" deve ser número positivo com ponto decimal (ex: 49.90)
+- "data" deve ser DD/MM
+- Se aparecer indicação de parcela no texto (ex: "02/12"), mantenha na descrição`;
 
     // 3. Chamar Gemini API
     const resposta = await fetch(
