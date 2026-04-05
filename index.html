@@ -3,27 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinanÃ§as Pessoais | Login</title>
+    <title>Login | SmartFinanças</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            overflow: hidden;
+        }
+
+        .login-bg-decor {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: var(--primary);
+            filter: blur(120px);
+            opacity: 0.05;
+            border-radius: 50%;
+            top: -200px;
+            right: -200px;
+            z-index: 0;
+        }
+
+        .login-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            border-radius: 32px;
+            width: 100%;
+            max-width: 440px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-logo {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1.5px;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-subtitle {
+            color: #94a3b8;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .btn-google {
+            background: #fff;
+            color: #1e293b !important;
+            width: 100%;
+            height: 56px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-google:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            background: #f8fafc;
+        }
+
+        .btn-google:active {
+            transform: translateY(0);
+        }
+
+        .btn-google img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .login-footer {
+            margin-top: 2.5rem;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .login-footer span {
+            color: var(--primary);
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-card">
-            <div class="login-logo">
-                SmartFinanças
-            </div>
-            <p class="login-desc">Gerencie seus cartÃµes, receitas e cobranÃ§as em um sÃ³ lugar.</p>
-            
-            <button class="btn btn-google" id="btnGoogleLogin">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa_google_sign_in_button.png" alt="Google" width="18">
-                Entrar com Google
-            </button>
-            
-            <div id="loadingOverlay">
-                <div class="spinner"></div>
-            </div>
+    <div class="login-bg-decor"></div>
+    
+    <div class="login-card">
+        <div class="login-logo">SmartFinanças</div>
+        <div class="login-subtitle">
+            Gerencie seus cartões, receitas e <br>cobranças em um só lugar.
+        </div>
+
+        <button class="btn-google" id="btnLoginGoogle" onclick="loginComGoogle()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+            Entrar com Google
+        </button>
+
+        <div class="login-footer">
+            Desenvolvido para sua <span>liberdade financeira.</span>
         </div>
     </div>
+
+    <!-- UI Components -->
+    <div id="loadingOverlay"><div class="spinner"></div></div>
+    <div id="toastContainer"></div>
 
     <!-- Firebase SDK Compat -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -33,20 +142,14 @@
 
     <!-- App Scripts -->
     <script src="js/firebase-config.js"></script>
-    <script src="js/app.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
 
     <script>
-        // LÃ³gica da tela de login
-        document.getElementById('btnGoogleLogin').addEventListener('click', loginComGoogle);
-
-        // Se jÃ¡ estiver logado, redireciona para o dashboard
-        auth.onAuthStateChanged(user => {
+        // Observa se jÃ¡ estÃ¡ logado para pular a tela de login
+        verificarAuth(user => {
             if (user) window.location.href = 'dashboard.html';
         });
-        
-        // Container de Toasts para feedback de erros de login
-        document.body.insertAdjacentHTML('beforeend', '<div id="toastContainer"></div>');
     </script>
 </body>
 </html>

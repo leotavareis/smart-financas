@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pessoas | FinanÃ§as Pessoais</title>
+    <title>Pessoas | Finanças Pessoais</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -15,10 +15,10 @@
                 <a href="dashboard.html" class="nav-item">ðŸ  Dashboard</a>
                 <a href="receitas.html" class="nav-item">ðŸ“ˆ Receitas</a>
                 <a href="despesas.html" class="nav-item">ðŸ“‰ Despesas fixas</a>
-                <a href="cartoes.html" class="nav-item">ðŸ’³ CartÃµes</a>
+                <a href="cartoes.html" class="nav-item">ðŸ’³ Cartões</a>
                 <a href="faturas.html" class="nav-item">ðŸ“„ Importar Faturas</a>
                 <a href="parcelamentos.html" class="nav-item">â³ Parcelamentos</a>
-                <a href="relatorios.html" class="nav-item">ðŸ“Š RelatÃ³rios/CobranÃ§a</a>
+                <a href="relatorios.html" class="nav-item">ðŸ“Š Relatórios/Cobrança</a>
                 <a href="pessoas.html" class="nav-item active">ðŸ‘¥ Pessoas</a>
             </nav>
             <div class="sidebar-footer">
@@ -65,7 +65,7 @@
                             </div>
                             <div class="fl-group">
                                 <input type="color" id="p-cor" style="height:50px; padding:4px">
-                                <label>Cor de IdentificaÃ§Ã£o</label>
+                                <label>Cor de Identificação</label>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -168,7 +168,7 @@
             const cor = document.getElementById('p-cor').value;
 
             if (!nome) {
-                mostrarToast('O nome Ã© obrigatÃ³rio.', 'aviso');
+                mostrarToast('O nome Ã© obrigatório.', 'aviso');
                 return;
             }
 
@@ -194,7 +194,7 @@
         }
 
         async function excluirPessoa(id) {
-            confirmarExclusao('Isso removerÃ¡ a pessoa da lista, mas os lanÃ§amentos antigos dela permanecerÃ£o. Continuar?', async () => {
+            confirmarExclusao('Isso removerÃ¡ a pessoa da lista, mas os lançamentos antigos dela permanecerão. Continuar?', async () => {
                 mostrarLoading(true);
                 try {
                     await colecaoUsuario('pessoas').doc(id).delete();

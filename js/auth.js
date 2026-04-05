@@ -1,11 +1,11 @@
-// ============================================================
-// MÓDULO DE AUTENTICAÇÃO
-// Login com Google, inicialização do usuário novo e logout
+﻿// ============================================================
+// MÃ“DULO DE AUTENTICAÃ‡ÃƒO
+// Login com Google, inicializaÃ§Ã£o do usuÃ¡rio novo e logout
 // ============================================================
 
 /**
- * Observa o estado de autenticação.
- * Em páginas protegidas, redireciona para login se não estiver autenticado.
+ * Observa o estado de autenticaÃ§Ã£o.
+ * Em pÃ¡ginas protegidas, redireciona para login se nÃ£o estiver autenticado.
  * @param {Function} callback - Executado com o objeto user quando autenticado
  */
 function verificarAuth(callback) {
@@ -14,7 +14,7 @@ function verificarAuth(callback) {
     const ehPublica   = pagina === 'index.html' || pagina === '';
 
     if (user) {
-      // Garante que os dados base do usuário existam (idempotente — só cria se faltar)
+      // Garante que os dados base do usuÃ¡rio existam (idempotente â€” sÃ³ cria se faltar)
       await inicializarUsuario(user);
       if (typeof callback === 'function') callback(user);
     } else {
@@ -25,7 +25,7 @@ function verificarAuth(callback) {
 
 /**
  * Abre o popup do Google e faz o login.
- * Após o login bem-sucedido, redireciona para o dashboard.
+ * ApÃ³s o login bem-sucedido, redireciona para o dashboard.
  */
 async function loginComGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
@@ -42,15 +42,15 @@ async function loginComGoogle() {
 }
 
 /**
- * Cria o documento raiz do usuário no Firestore e pré-cadastra
- * os 3 cartões padrão + 3 pessoas em branco (apenas na primeira vez).
+ * Cria o documento raiz do usuÃ¡rio no Firestore e prÃ©-cadastra
+ * os 3 cartÃµes padrÃ£o + 3 pessoas em branco (apenas na primeira vez).
  * @param {firebase.User} user
  */
 async function inicializarUsuario(user) {
   const userRef = db.collection('usuarios').doc(user.uid);
   const snap    = await userRef.get();
 
-  // 1. Criar documento do usuário se não existir
+  // 1. Criar documento do usuÃ¡rio se nÃ£o existir
   if (!snap.exists) {
     await userRef.set({
       nome      : user.displayName || '',
@@ -62,7 +62,7 @@ async function inicializarUsuario(user) {
 
   const ts = firebase.firestore.FieldValue.serverTimestamp();
 
-  // 2. Verificar e criar cartões padrão se a coleção estiver vazia
+  // 2. Verificar e criar cartÃµes padrÃ£o se a coleÃ§Ã£o estiver vazia
   const snapCartoes = await userRef.collection('cartoes').limit(1).get();
   if (snapCartoes.empty) {
     const batch = db.batch();
@@ -77,7 +77,7 @@ async function inicializarUsuario(user) {
     await batch.commit();
   }
 
-  // 3. Verificar e criar pessoas padrão se a coleção estiver vazia
+  // 3. Verificar e criar pessoas padrÃ£o se a coleÃ§Ã£o estiver vazia
   const snapPessoas = await userRef.collection('pessoas').limit(1).get();
   if (snapPessoas.empty) {
     const batch = db.batch();
@@ -92,7 +92,7 @@ async function inicializarUsuario(user) {
 }
 
 /**
- * Encerra a sessão e redireciona para a tela de login.
+ * Encerra a sessÃ£o e redireciona para a tela de login.
  */
 async function logout() {
   try {
@@ -105,22 +105,22 @@ async function logout() {
 }
 
 // ============================================================
-// HELPERS DE DADOS — utilizados por todos os módulos
+// HELPERS DE DADOS â€” utilizados por todos os mÃ³dulos
 // ============================================================
 
 /**
- * Retorna a referência de uma subcoleção do usuário autenticado.
+ * Retorna a referÃªncia de uma subcoleÃ§Ã£o do usuÃ¡rio autenticado.
  * @param {string} colecao
  * @returns {firebase.firestore.CollectionReference}
  */
 function colecaoUsuario(colecao) {
   const user = auth.currentUser;
-  if (!user) throw new Error('Usuário não autenticado');
+  if (!user) throw new Error('UsuÃ¡rio nÃ£o autenticado');
   return db.collection('usuarios').doc(user.uid).collection(colecao);
 }
 
 /**
- * Retorna o mês atual no formato YYYY-MM.
+ * Retorna o mÃªs atual no formato YYYY-MM.
  */
 function getMesAtual() {
   const d = new Date();
@@ -135,14 +135,14 @@ function formatarMes(mesStr) {
   if (!mesStr) return '';
   const [ano, mes] = mesStr.split('-');
   const nomes = [
-    'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+    'Janeiro','Fevereiro','MarÃ§o','Abril','Maio','Junho',
     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
   ];
   return `${nomes[parseInt(mes, 10) - 1]} ${ano}`;
 }
 
 /**
- * Avança ou recua um mês a partir de uma string YYYY-MM.
+ * AvanÃ§a ou recua um mÃªs a partir de uma string YYYY-MM.
  * @param {string} mesStr
  * @param {number} delta  +1 ou -1
  */

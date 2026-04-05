@@ -1,7 +1,7 @@
-// ============================================================
-// CONFIGURAÇÃO DO FIREBASE
+﻿// ============================================================
+// CONFIGURAÃ‡ÃƒO DO FIREBASE
 // IMPORTANTE: Substitua os valores abaixo pelas suas credenciais
-// obtidas no Firebase Console > Configurações do projeto
+// obtidas no Firebase Console > ConfiguraÃ§Ãµes do projeto
 // ============================================================
 
 const firebaseConfig = {
@@ -17,16 +17,16 @@ const firebaseConfig = {
 // Inicializar o app Firebase
 firebase.initializeApp(firebaseConfig);
 
-// Instâncias globais utilizadas em todos os módulos
+// InstÃ¢ncias globais utilizadas em todos os mÃ³dulos
 const auth      = firebase.auth();
 const db        = firebase.firestore();
 const analytics = firebase.analytics();
 
-// Habilitar persistência offline — melhora UX no celular com rede instável
+// Habilitar persistÃªncia offline â€” melhora UX no celular com rede instÃ¡vel
 db.enablePersistence({ synchronizeTabs: true }).catch(err => {
   if (err.code === 'failed-precondition') {
-    console.warn('[Firestore] Persistência desabilitada: múltiplas abas abertas.');
+    console.warn('[Firestore] PersistÃªncia desabilitada: mÃºltiplas abas abertas.');
   } else if (err.code === 'unimplemented') {
-    console.warn('[Firestore] Persistência não suportada neste navegador.');
+    console.warn('[Firestore] PersistÃªncia nÃ£o suportada neste navegador.');
   }
 });

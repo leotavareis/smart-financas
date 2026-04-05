@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CartÃµes | FinanÃ§as Pessoais</title>
+    <title>Cartões | Finanças Pessoais</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -15,10 +15,10 @@
                 <a href="dashboard.html" class="nav-item">ðŸ  Dashboard</a>
                 <a href="receitas.html" class="nav-item">ðŸ“ˆ Receitas</a>
                 <a href="despesas.html" class="nav-item">ðŸ“‰ Despesas fixas</a>
-                <a href="cartoes.html" class="nav-item active">ðŸ’³ CartÃµes</a>
+                <a href="cartoes.html" class="nav-item active">ðŸ’³ Cartões</a>
                 <a href="faturas.html" class="nav-item">ðŸ“„ Importar Faturas</a>
                 <a href="parcelamentos.html" class="nav-item">â³ Parcelamentos</a>
-                <a href="relatorios.html" class="nav-item">ðŸ“Š RelatÃ³rios/CobranÃ§a</a>
+                <a href="relatorios.html" class="nav-item">ðŸ“Š Relatórios/Cobrança</a>
                 <a href="pessoas.html" class="nav-item">ðŸ‘¥ Pessoas</a>
             </nav>
             <div class="sidebar-footer">
@@ -40,10 +40,10 @@
             <header class="page-header">
                 <div class="page-title">
                     <button id="hamburger" class="btn btn-ghost">â˜°</button>
-                    <h1>Meus CartÃµes</h1>
+                    <h1>Meus Cartões</h1>
                 </div>
                 <div style="display:flex; gap:12px; align-items:center;">
-                    <button class="btn btn-primary" onclick="abrirNovoCartao()">+ Adicionar CartÃ£o</button>
+                    <button class="btn btn-primary" onclick="abrirNovoCartao()">+ Adicionar Cartão</button>
                     <div class="month-selector">
                         <button class="month-nav" id="prevMonth">â€¹</button>
                         <span id="monthDisplay">...</span>
@@ -56,19 +56,19 @@
                 <!-- JS popula aqui -->
             </div>
 
-            <!-- Modal Editar CartÃ£o -->
+            <!-- Modal Editar Cartão -->
             <div class="modal-wrapper" id="modalEditarCartao">
                 <div class="modal-overlay"></div>
                 <div class="modal-box">
                     <form id="formEditarCartao">
                         <input type="hidden" id="edit-cartao-id">
                         <div class="modal-header">
-                            <h3 class="modal-title" id="modalCartaoTitulo">Editar Detalhes do CartÃ£o</h3>
+                            <h3 class="modal-title" id="modalCartaoTitulo">Editar Detalhes do Cartão</h3>
                         </div>
                         <div class="modal-body">
                             <div class="fl-group">
                                 <input type="text" id="edit-cartao-nome" required>
-                                <label>Nome do CartÃ£o</label>
+                                <label>Nome do Cartão</label>
                             </div>
                             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
                                 <div class="fl-group">
@@ -86,12 +86,12 @@
                             </div>
                             <div class="fl-group">
                                 <input type="color" id="edit-cartao-cor" style="height:50px; padding:4px">
-                                <label>Cor de IdentificaÃ§Ã£o</label>
+                                <label>Cor de Identificação</label>
                             </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-ghost" onclick="fecharModal('modalEditarCartao')">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Salvar AlteraÃ§Ãµes</button>
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
                         </div>
                     </form>
                 </div>
@@ -129,7 +129,7 @@
             const container = document.getElementById('containerCartoes');
             
             try {
-                // 1. Buscar cartÃµes
+                // 1. Buscar cartões
                 const snapCartoes = await colecaoUsuario('cartoes').orderBy('nome').get();
                 
                 // 2. Buscar faturas do mÃªs selecionado
@@ -141,7 +141,7 @@
                 container.innerHTML = '';
 
                 if (snapCartoes.empty) {
-                    container.innerHTML = '<p class="empty-state">Nenhum cartÃ£o cadastrado. Recarregue para inicializar os padrÃµes.</p>';
+                    container.innerHTML = '<p class="empty-state">Nenhum cartão cadastrado. Recarregue para inicializar os padrões.</p>';
                     return;
                 }
 
@@ -173,15 +173,15 @@
                                     <span>Total: ${formatarMoeda(c.limite)}</span>
                                 </div>
                             ` : `
-                                <div class="small text-muted" style="text-align:center; padding-top:8px">Limite nÃ£o definido</div>
+                                <div class="small text-muted" style="text-align:center; padding-top:8px">Limite não definido</div>
                             `}
                         </div>
                     `;
                 });
 
             } catch (err) {
-                console.error('[CartÃµes] Erro:', err);
-                mostrarToast('Erro ao carregar cartÃµes.', 'erro');
+                console.error('[Cartões] Erro:', err);
+                mostrarToast('Erro ao carregar cartões.', 'erro');
             } finally {
                 mostrarLoading(false);
             }
@@ -195,7 +195,7 @@
             document.getElementById('edit-cartao-limite').value = '0';
             document.getElementById('edit-cartao-cor').value = '#3b82f6';
             
-            document.getElementById('modalCartaoTitulo').textContent = 'Novo CartÃ£o de CrÃ©dito';
+            document.getElementById('modalCartaoTitulo').textContent = 'Novo Cartão de CrÃ©dito';
             abrirModal('modalEditarCartao');
             inicializarFloatLabels();
         }
@@ -208,7 +208,7 @@
             document.getElementById('edit-cartao-limite').value = dados.limite || 0;
             document.getElementById('edit-cartao-cor').value = dados.cor || '#3b82f6';
             
-            document.getElementById('modalCartaoTitulo').textContent = 'Editar Detalhes do CartÃ£o';
+            document.getElementById('modalCartaoTitulo').textContent = 'Editar Detalhes do Cartão';
             abrirModal('modalEditarCartao');
             inicializarFloatLabels(); // Re-sincroniza labels
         }
@@ -223,7 +223,7 @@
             const cor = document.getElementById('edit-cartao-cor').value;
 
             if (!nome) {
-                mostrarToast('O nome do cartÃ£o Ã© obrigatÃ³rio.', 'aviso');
+                mostrarToast('O nome do cartão Ã© obrigatório.', 'aviso');
                 return;
             }
 
@@ -240,17 +240,17 @@
 
                 if (id) {
                     await colecaoUsuario('cartoes').doc(id).update(dados);
-                    mostrarToast('CartÃ£o atualizado!', 'sucesso');
+                    mostrarToast('Cartão atualizado!', 'sucesso');
                 } else {
                     dados.criado_em = firebase.firestore.FieldValue.serverTimestamp();
                     await colecaoUsuario('cartoes').add(dados);
-                    mostrarToast('Novo cartÃ£o adicionado!', 'sucesso');
+                    mostrarToast('Novo cartão adicionado!', 'sucesso');
                 }
                 
                 fecharModal('modalEditarCartao');
                 await carregarCartoes(mesSelecionado);
             } catch (err) {
-                console.error('[CartÃµes] Erro ao salvar:', err);
+                console.error('[Cartões] Erro ao salvar:', err);
                 mostrarToast('Erro ao salvar no Firestore.', 'erro');
             } finally {
                 mostrarLoading(false);

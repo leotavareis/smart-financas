@@ -1,32 +1,32 @@
-// ============================================================
-// APP.JS — Utilitários gerais, componentes de UI e FAB
-// Carregado em todas as páginas protegidas
+﻿// ============================================================
+// APP.JS â€” UtilitÃ¡rios gerais, componentes de UI e FAB
+// Carregado em todas as pÃ¡ginas protegidas
 // ============================================================
 
-// ── Estado global do mês selecionado ─────────────────────────
+// â”€â”€ Estado global do mÃªs selecionado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let mesSelecionado = getMesAtual();
 
 // ============================================================
-// FORMATAÇÃO
+// FORMATAÃ‡ÃƒO
 // ============================================================
 
-/** Formata número para moeda BRL: 1234.5 → "R$ 1.234,50" */
+/** Formata nÃºmero para moeda BRL: 1234.5 â†’ "R$ 1.234,50" */
 function formatarMoeda(valor) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
 }
 
 /** Formata data (string ISO, Date ou Timestamp) para dd/mm/aaaa */
 function formatarData(data) {
-  if (!data) return '—';
+  if (!data) return 'â€”';
   if (data && typeof data.toDate === 'function') data = data.toDate();
   const d = new Date(data);
-  if (isNaN(d)) return '—';
+  if (isNaN(d)) return 'â€”';
   return new Intl.DateTimeFormat('pt-BR').format(d);
 }
 
 /**
- * Normaliza string para busca: minúsculas, sem acentos, sem caracteres especiais.
- * Usado para match nas memórias de descrição.
+ * Normaliza string para busca: minÃºsculas, sem acentos, sem caracteres especiais.
+ * Usado para match nas memÃ³rias de descriÃ§Ã£o.
  */
 function normalizarString(str) {
   return (str || '')
@@ -39,11 +39,11 @@ function normalizarString(str) {
 }
 
 // ============================================================
-// TOAST — notificações no canto inferior direito
+// TOAST â€” notificaÃ§Ãµes no canto inferior direito
 // ============================================================
 
 /**
- * Exibe uma notificação temporária.
+ * Exibe uma notificaÃ§Ã£o temporÃ¡ria.
  * @param {string} mensagem
  * @param {'sucesso'|'erro'|'aviso'|'info'} tipo
  * @param {number} duracao  ms antes de sumir automaticamente
@@ -52,18 +52,18 @@ function mostrarToast(mensagem, tipo = 'info', duracao = 4000) {
   const container = document.getElementById('toastContainer');
   if (!container) return;
 
-  const icones = { sucesso: '✓', erro: '✕', aviso: '⚠', info: 'ℹ' };
+  const icones = { sucesso: 'âœ“', erro: 'âœ•', aviso: 'âš ', info: 'â„¹' };
 
   const toast = document.createElement('div');
   toast.className = `toast toast-${tipo}`;
   toast.innerHTML = `
     <span class="toast-icon">${icones[tipo] || icones.info}</span>
     <span class="toast-msg">${mensagem}</span>
-    <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+    <button class="toast-close" onclick="this.parentElement.remove()">âœ•</button>
   `;
   container.appendChild(toast);
 
-  // Entra com animação
+  // Entra com animaÃ§Ã£o
   requestAnimationFrame(() => toast.classList.add('toast-visible'));
 
   // Sai automaticamente
@@ -74,7 +74,7 @@ function mostrarToast(mensagem, tipo = 'info', duracao = 4000) {
 }
 
 // ============================================================
-// LOADING — overlay de carregamento global
+// LOADING â€” overlay de carregamento global
 // ============================================================
 
 function mostrarLoading(mostrar) {
@@ -83,7 +83,7 @@ function mostrarLoading(mostrar) {
 }
 
 // ============================================================
-// MODAL — sistema reutilizável
+// MODAL â€” sistema reutilizÃ¡vel
 // ============================================================
 
 function abrirModal(id) {
@@ -105,9 +105,9 @@ document.addEventListener('click', e => {
 });
 
 /**
- * Mostra diálogo de confirmação antes de excluir algo.
+ * Mostra diÃ¡logo de confirmaÃ§Ã£o antes de excluir algo.
  * @param {string} mensagem
- * @param {Function} callback - Executado se o usuário confirmar
+ * @param {Function} callback - Executado se o usuÃ¡rio confirmar
  */
 function confirmarExclusao(mensagem, callback) {
   const id = 'modalConfirmacaoGlobal';
@@ -121,7 +121,7 @@ function confirmarExclusao(mensagem, callback) {
       <div class="modal-overlay"></div>
       <div class="modal-box modal-sm">
         <div class="modal-header">
-          <h3 class="modal-title">Confirmar exclusão</h3>
+          <h3 class="modal-title">Confirmar exclusÃ£o</h3>
         </div>
         <div class="modal-body">
           <p id="msgConfirmacao" style="color:var(--text-secondary);margin:0"></p>
@@ -136,7 +136,7 @@ function confirmarExclusao(mensagem, callback) {
 
   document.getElementById('msgConfirmacao').textContent = mensagem;
 
-  // Clonar botão para limpar listeners anteriores
+  // Clonar botÃ£o para limpar listeners anteriores
   const btn    = document.getElementById('btnConfirmarExclusaoGlobal');
   const novBtn = btn.cloneNode(true);
   btn.replaceWith(novBtn);
@@ -146,11 +146,11 @@ function confirmarExclusao(mensagem, callback) {
 }
 
 // ============================================================
-// SELETOR DE MÊS — header de todas as páginas
+// SELETOR DE MÃŠS â€” header de todas as pÃ¡ginas
 // ============================================================
 
 /**
- * Inicializa os botões ‹ e › do seletor de mês.
+ * Inicializa os botÃµes â€¹ e â€º do seletor de mÃªs.
  * @param {Function} callback - Chamado com o novo YYYY-MM ao mudar
  */
 function inicializarSeletorMes(callback) {
@@ -177,7 +177,7 @@ function inicializarSeletorMes(callback) {
 }
 
 // ============================================================
-// SIDEBAR & NAVEGAÇÃO
+// SIDEBAR & NAVEGAÃ‡ÃƒO
 // ============================================================
 
 function inicializarSidebar() {
@@ -202,7 +202,7 @@ function inicializarSidebar() {
 }
 
 // ============================================================
-// AVATAR DO USUÁRIO
+// AVATAR DO USUÃRIO
 // ============================================================
 
 function inicializarAvatar(user) {
@@ -211,12 +211,12 @@ function inicializarAvatar(user) {
   const email = document.getElementById('userEmail');
 
   if (foto && user.photoURL) { foto.src = user.photoURL; foto.alt = user.displayName; }
-  if (nome)  nome.textContent  = user.displayName?.split(' ')[0] || 'Usuário';
+  if (nome)  nome.textContent  = user.displayName?.split(' ')[0] || 'UsuÃ¡rio';
   if (email) email.textContent = user.email || '';
 }
 
 // ============================================================
-// FAB — botão flutuante de lançamento rápido
+// FAB â€” botÃ£o flutuante de lanÃ§amento rÃ¡pido
 // ============================================================
 
 function inicializarFAB() {
@@ -226,14 +226,14 @@ function inicializarFAB() {
   });
 }
 
-/** Popula selects do modal de lançamento rápido */
+/** Popula selects do modal de lanÃ§amento rÃ¡pido */
 async function carregarDadosLancamentoRapido() {
   try {
-    // Cartões
+    // CartÃµes
     const snapCartoes = await colecaoUsuario('cartoes').orderBy('nome').get();
     const selCartao   = document.getElementById('lr-cartao');
     if (selCartao) {
-      selCartao.innerHTML = '<option value="">— Cartão —</option>';
+      selCartao.innerHTML = '<option value="">â€” CartÃ£o â€”</option>';
       snapCartoes.forEach(d => {
         selCartao.innerHTML += `<option value="${d.id}">${d.data().nome}</option>`;
       });
@@ -250,7 +250,7 @@ async function carregarDadosLancamentoRapido() {
       });
     }
 
-    // Data padrão = hoje
+    // Data padrÃ£o = hoje
     const dtInput = document.getElementById('lr-data');
     if (dtInput) dtInput.value = new Date().toISOString().slice(0, 10);
 
@@ -259,7 +259,7 @@ async function carregarDadosLancamentoRapido() {
   }
 }
 
-/** Salva o lançamento rápido no Firestore */
+/** Salva o lanÃ§amento rÃ¡pido no Firestore */
 async function salvarLancamentoRapido(e) {
   e.preventDefault();
 
@@ -275,7 +275,7 @@ async function salvarLancamentoRapido(e) {
   const valor = parseFloat(valorStr.replace(',', '.'));
 
   if (!cartaoId || !descricao || isNaN(valor) || !data) {
-    mostrarToast('Preencha todos os campos obrigatórios.', 'aviso');
+    mostrarToast('Preencha todos os campos obrigatÃ³rios.', 'aviso');
     return;
   }
 
@@ -285,7 +285,7 @@ async function salvarLancamentoRapido(e) {
   try {
     mostrarLoading(true);
 
-    // Garante que existe uma fatura para esse cartão/mês
+    // Garante que existe uma fatura para esse cartÃ£o/mÃªs
     const faturaId = await obterOuCriarFatura(cartaoId, mes);
 
     await colecaoUsuario('lancamentos').add({
@@ -303,16 +303,16 @@ async function salvarLancamentoRapido(e) {
 
     await atualizarTotalFatura(faturaId);
 
-    mostrarToast('Lançamento salvo!', 'sucesso');
+    mostrarToast('LanÃ§amento salvo!', 'sucesso');
     fecharModal('modalLancamentoRapido');
     document.getElementById('formLancamentoRapido')?.reset();
 
-    // Recarrega a página atual se ela tiver essa função
+    // Recarrega a pÃ¡gina atual se ela tiver essa funÃ§Ã£o
     if (typeof carregarPagina === 'function') carregarPagina();
 
   } catch (err) {
     console.error('[FAB] Erro ao salvar:', err);
-    mostrarToast('Erro ao salvar lançamento.', 'erro');
+    mostrarToast('Erro ao salvar lanÃ§amento.', 'erro');
   } finally {
     mostrarLoading(false);
   }
@@ -323,7 +323,7 @@ async function salvarLancamentoRapido(e) {
 // ============================================================
 
 /**
- * Busca a fatura de um cartão/mês ou cria uma nova se não existir.
+ * Busca a fatura de um cartÃ£o/mÃªs ou cria uma nova se nÃ£o existir.
  * @returns {string} faturaId
  */
 async function obterOuCriarFatura(cartaoId, mes) {
@@ -353,7 +353,7 @@ async function atualizarTotalFatura(faturaId) {
 }
 
 // ============================================================
-// FLOAT LABELS — inputs com label flutuante
+// FLOAT LABELS â€” inputs com label flutuante
 // ============================================================
 
 function inicializarFloatLabels() {
@@ -387,11 +387,11 @@ function toggleCamposParcela(checkId, camposId) {
 }
 
 // ============================================================
-// GRÁFICO DE BARRAS — canvas vanilla (dashboard)
+// GRÃFICO DE BARRAS â€” canvas vanilla (dashboard)
 // ============================================================
 
 /**
- * Desenha gráfico de barras duplas (receitas × despesas).
+ * Desenha grÃ¡fico de barras duplas (receitas Ã— despesas).
  * @param {CanvasRenderingContext2D} ctx
  * @param {string[]} labels
  * @param {number[]} receitas
@@ -466,7 +466,7 @@ function desenharGrafico(ctx, labels, receitas, despesas) {
   ctx.fillText('Despesas', PAD.left + 106, 16);
 }
 
-/** Desenha retângulo com bordas arredondadas apenas no topo */
+/** Desenha retÃ¢ngulo com bordas arredondadas apenas no topo */
 function arredondadoTopo(ctx, x, y, w, h, r) {
   if (h <= 0) return;
   r = Math.min(r, h / 2, w / 2);
@@ -483,7 +483,7 @@ function arredondadoTopo(ctx, x, y, w, h, r) {
 }
 
 // ============================================================
-// INICIALIZAÇÃO GERAL — executada em todas as páginas
+// INICIALIZAÃ‡ÃƒO GERAL â€” executada em todas as pÃ¡ginas
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
   inicializarSidebar();
   inicializarFAB();
 
-  // Formulário de lançamento rápido
+  // FormulÃ¡rio de lanÃ§amento rÃ¡pido
   const formLR = document.getElementById('formLancamentoRapido');
   if (formLR) {
     formLR.addEventListener('submit', salvarLancamentoRapido);

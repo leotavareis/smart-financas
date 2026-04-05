@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receitas | FinanÃ§as Pessoais</title>
+    <title>Receitas | Finanças Pessoais</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -15,10 +15,10 @@
                 <a href="dashboard.html" class="nav-item">ðŸ  Dashboard</a>
                 <a href="receitas.html" class="nav-item active">ðŸ“ˆ Receitas</a>
                 <a href="despesas.html" class="nav-item">ðŸ“‰ Despesas fixas</a>
-                <a href="cartoes.html" class="nav-item">ðŸ’³ CartÃµes</a>
+                <a href="cartoes.html" class="nav-item">ðŸ’³ Cartões</a>
                 <a href="faturas.html" class="nav-item">ðŸ“„ Importar Faturas</a>
                 <a href="parcelamentos.html" class="nav-item">â³ Parcelamentos</a>
-                <a href="relatorios.html" class="nav-item">ðŸ“Š RelatÃ³rios/CobranÃ§a</a>
+                <a href="relatorios.html" class="nav-item">ðŸ“Š Relatórios/Cobrança</a>
                 <a href="pessoas.html" class="nav-item">ðŸ‘¥ Pessoas</a>
             </nav>
             <div class="sidebar-footer">
@@ -55,7 +55,7 @@
                 <form id="formReceita" class="stats-grid" style="grid-template-columns: 2fr 1fr 1fr auto; align-items: end;">
                     <div class="fl-group mb-0">
                         <input type="text" id="rec-descricao" required>
-                        <label>DescriÃ§Ã£o</label>
+                        <label>Descrição</label>
                     </div>
                     <div class="fl-group mb-0">
                         <input type="text" id="rec-valor" placeholder="0,00" required>
@@ -72,7 +72,7 @@
             <!-- Listagem -->
             <div class="card">
                 <div class="flex-between mb-4">
-                    <h3>HistÃ³rico do MÃªs</h3>
+                    <h3>Histórico do MÃªs</h3>
                     <div class="stat-value valor-positivo" id="totalMesReceitas" style="font-size: 1.25rem;">R$ 0,00</div>
                 </div>
                 
@@ -81,9 +81,9 @@
                         <thead>
                             <tr>
                                 <th>Data</th>
-                                <th>DescriÃ§Ã£o</th>
+                                <th>Descrição</th>
                                 <th style="text-align: right;">Valor</th>
-                                <th style="text-align: right;">AÃ§Ãµes</th>
+                                <th style="text-align: right;">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyReceitas">
@@ -115,7 +115,7 @@
             inicializarAvatar(user);
             inicializarSeletorMes(mes => carregarReceitas(mes));
             
-            // Data padrÃ£o = hoje
+            // Data padrão = hoje
             document.getElementById('rec-data').value = new Date().toISOString().slice(0, 10);
             
             // Submit form
@@ -139,7 +139,7 @@
                 tbody.innerHTML = '';
 
                 if (snap.empty) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhuma receita lanÃ§ada para este mÃªs.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhuma receita lançada para este mÃªs.</td></tr>';
                     totalEl.textContent = formatarMoeda(0);
                     return;
                 }

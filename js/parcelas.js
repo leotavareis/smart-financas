@@ -1,5 +1,5 @@
-// ============================================================
-// PARCELAS.JS — Linha do tempo de parcelamentos
+﻿// ============================================================
+// PARCELAS.JS â€” Linha do tempo de parcelamentos
 // Depende de: app.js, auth.js
 // ============================================================
 
@@ -19,7 +19,7 @@ async function inicializarPaginaParcelas() {
 }
 
 // ============================================================
-// FILTRO DE CARTÕES
+// FILTRO DE CARTÃ•ES
 // ============================================================
 
 async function carregarCartoesFiltro() {
@@ -28,7 +28,7 @@ async function carregarCartoesFiltro() {
 
   const filtro = document.getElementById('filtroParcCartao');
   if (!filtro) return;
-  filtro.innerHTML = '<option value="">Todos os cartões</option>';
+  filtro.innerHTML = '<option value="">Todos os cartÃµes</option>';
   cartoesCacheParcelas.forEach(c => {
     filtro.innerHTML += `<option value="${c.id}" style="color:${c.cor}">${c.nome}</option>`;
   });
@@ -40,8 +40,8 @@ async function carregarCartoesFiltro() {
 // ============================================================
 
 /**
- * Busca todos os lançamentos parcelados (total_parcelas > 1) e
- * projeta quais ainda estarão ativos nos próximos meses.
+ * Busca todos os lanÃ§amentos parcelados (total_parcelas > 1) e
+ * projeta quais ainda estarÃ£o ativos nos prÃ³ximos meses.
  */
 async function renderizarLinhaDeTempo() {
   mostrarLoading(true);
@@ -51,7 +51,7 @@ async function renderizarLinhaDeTempo() {
   const cartaoFiltro = document.getElementById('filtroParcCartao')?.value || '';
 
   try {
-    // Buscar todos os lançamentos parcelados
+    // Buscar todos os lanÃ§amentos parcelados
     let query = colecaoUsuario('lancamentos').where('total_parcelas', '>', 1);
     const snap = await query.get();
 
@@ -61,31 +61,31 @@ async function renderizarLinhaDeTempo() {
       return;
     }
 
-    // Filtrar por cartão se selecionado
+    // Filtrar por cartÃ£o se selecionado
     let lancamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (cartaoFiltro) lancamentos = lancamentos.filter(l => l.cartao_id === cartaoFiltro);
 
-    // Projetar para os próximos 18 meses a partir do mês atual
+    // Projetar para os prÃ³ximos 18 meses a partir do mÃªs atual
     const meses = gerarMeses(getMesAtual(), 18);
 
-    // Para cada lançamento, calcular o mês de encerramento
+    // Para cada lanÃ§amento, calcular o mÃªs de encerramento
     const projetos = lancamentos.map(l => {
-      const mesInicio   = l.mes; // mês do 1ª parcela
+      const mesInicio   = l.mes; // mÃªs do 1Âª parcela
       const parcFaltam  = l.total_parcelas - l.parcela_atual;
       const mesEncerra  = adicionarMeses(mesInicio, l.total_parcelas - 1);
       return { ...l, mesEncerra };
     });
 
-    // Construir estrutura por mês
+    // Construir estrutura por mÃªs
     const porMes = {};
     meses.forEach(m => { porMes[m] = []; });
 
     projetos.forEach(l => {
       meses.forEach(m => {
-        // Parcela ativa neste mês se: mês >= mês da parcela atual E mês <= mês de encerramento
+        // Parcela ativa neste mÃªs se: mÃªs >= mÃªs da parcela atual E mÃªs <= mÃªs de encerramento
         const mesParcAtual = adicionarMeses(l.mes, l.parcela_atual - 1);
         if (m >= mesParcAtual && m <= l.mesEncerra) {
-          // Número da parcela neste mês
+          // NÃºmero da parcela neste mÃªs
           const diff        = diferencaMeses(l.mes, m);
           const numParcela  = diff + 1;
           if (numParcela >= 1 && numParcela <= l.total_parcelas) {
@@ -100,7 +100,7 @@ async function renderizarLinhaDeTempo() {
 
     meses.forEach(mes => {
       const items = porMes[mes];
-      if (!items.length) return; // Não mostrar meses sem parcelas
+      if (!items.length) return; // NÃ£o mostrar meses sem parcelas
 
       const totalMes = items.reduce((s, l) => s + (l.valor || 0), 0);
       const isAtual  = mes === getMesAtual();
@@ -111,7 +111,7 @@ async function renderizarLinhaDeTempo() {
         <div class="mes-header-tl">
           <div class="mes-titulo-tl">
             <span class="mes-nome-tl">${formatarMes(mes)}</span>
-            ${isAtual ? '<span class="badge badge-info">Mês atual</span>' : ''}
+            ${isAtual ? '<span class="badge badge-info">MÃªs atual</span>' : ''}
           </div>
           <span class="mes-total-tl mono">${formatarMoeda(totalMes)}</span>
         </div>
@@ -131,7 +131,7 @@ async function renderizarLinhaDeTempo() {
           <div class="parcela-meta">
             <span class="badge" style="background:${cartao?.cor||'#3b82f6'}">${cartao?.nome || '?'}</span>
             <span class="parcela-num">${l.parcelaDoMes}/${l.total_parcelas}</span>
-            ${encerra ? '<span class="badge badge-warning">Última</span>' : ''}
+            ${encerra ? '<span class="badge badge-warning">Ãšltima</span>' : ''}
           </div>
           <div class="parcela-valor mono">${formatarMoeda(l.valor)}</div>
         `;
@@ -154,7 +154,7 @@ async function renderizarLinhaDeTempo() {
   }
 }
 
-/** Exibe card de resumo: total de parcelamentos ativos e custo mensal médio */
+/** Exibe card de resumo: total de parcelamentos ativos e custo mensal mÃ©dio */
 function renderizarResumoParcelas(projetos, meses) {
   const mesAtual  = getMesAtual();
   const ativos    = projetos.filter(l => l.mesEncerra >= mesAtual);
@@ -168,11 +168,11 @@ function renderizarResumoParcelas(projetos, meses) {
       <div class="stat-value">${ativos.length}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Custo este mês</div>
+      <div class="stat-label">Custo este mÃªs</div>
       <div class="stat-value mono valor-negativo">${formatarMoeda(totalMes)}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Encerram este mês</div>
+      <div class="stat-label">Encerram este mÃªs</div>
       <div class="stat-value">${projetos.filter(l => l.mesEncerra === mesAtual).length}</div>
     </div>
   `;
@@ -182,7 +182,7 @@ function renderizarResumoParcelas(projetos, meses) {
 // HELPERS DE DATA
 // ============================================================
 
-/** Gera array de YYYY-MM a partir de um mês inicial por N meses */
+/** Gera array de YYYY-MM a partir de um mÃªs inicial por N meses */
 function gerarMeses(inicio, quantidade) {
   const resultado = [];
   let [ano, mes] = inicio.split('-').map(Number);
@@ -203,7 +203,7 @@ function adicionarMeses(mesStr, n) {
   return `${ano}-${String(mes).padStart(2, '0')}`;
 }
 
-/** Diferença em meses entre duas strings YYYY-MM */
+/** DiferenÃ§a em meses entre duas strings YYYY-MM */
 function diferencaMeses(de, ate) {
   const [aA, mA] = de.split('-').map(Number);
   const [aB, mB] = ate.split('-').map(Number);
