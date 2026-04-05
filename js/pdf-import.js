@@ -14,8 +14,10 @@ const estadoImport = {
   cartoes       : []    // Cache
 };
 
-// Chave Gemini salva no localStorage (não vai para o Firestore)
-const GEMINI_KEY_LS = 'smartfinancas_gemini_key';
+// Chaves e provedor salvos no localStorage
+const GEMINI_KEY_LS   = 'smartfinancas_gemini_key';
+const OPENAI_KEY_LS   = 'smartfinancas_openai_key';
+const IA_PROVIDER_LS  = 'smartfinancas_ia_provider'; // 'gemini' | 'openai'
 
 // ============================================================
 // INICIALIZAÇÃO DA PÁGINA
@@ -30,8 +32,9 @@ async function inicializarPaginaFaturas() {
     renderizarStatusChave();
     await listarFaturasExistentes();
 
-    // Abre o modal de chave automaticamente se ainda não estiver configurada
-    if (!obterChaveGemini()) {
+    // Abre o modal automaticamente se nenhuma IA estiver configurada
+    const semChave = !obterChaveGemini() && !obterChaveOpenAI();
+    if (semChave) {
       setTimeout(() => abrirModal('modalGeminiKey'), 600);
     }
   } catch (err) {
@@ -110,44 +113,70 @@ async function listarFaturasExistentes() {
 // GERENCIAMENTO DA CHAVE GEMINI
 // ============================================================
 
-function obterChaveGemini() {
-  return localStorage.getItem(GEMINI_KEY_LS) || '';
-}
+function obterChaveGemini()  { return localStorage.getItem(GEMINI_KEY_LS)  || ''; }
+function obterChaveOpenAI()  { return localStorage.getItem(OPENAI_KEY_LS)  || ''; }
+function obterProvedorIA()   { return localStorage.getItem(IA_PROVIDER_LS) || 'gemini'; }
 
 function salvarChaveGemini(chave) {
   if (chave) localStorage.setItem(GEMINI_KEY_LS, chave.trim());
   else localStorage.removeItem(GEMINI_KEY_LS);
 }
+function salvarChaveOpenAI(chave) {
+  if (chave) localStorage.setItem(OPENAI_KEY_LS, chave.trim());
+  else localStorage.removeItem(OPENAI_KEY_LS);
+}
 
-/** Mostra no card de configuração se a chave já está salva */
+/** Mostra no card de configuração o provedor e status da chave */
 function renderizarStatusChave() {
-  const chave  = obterChaveGemini();
-  const status = document.getElementById('geminiKeyStatus');
-  const input  = document.getElementById('geminiKeyInput');
+  const provedor = obterProvedorIA();
+  const chaveG   = obterChaveGemini();
+  const chaveO   = obterChaveOpenAI();
+  const status   = document.getElementById('geminiKeyStatus');
   if (!status) return;
 
-  if (chave) {
+  // Sincronia dos radios
+  const radio = document.getElementById(provedor === 'openai' ? 'radioOpenAI' : 'radioGemini');
+  if (radio) radio.checked = true;
+
+  const chaveAtiva = provedor === 'openai' ? chaveO : chaveG;
+  const nomeIA     = provedor === 'openai' ? 'OpenAI GPT' : 'Google Gemini';
+
+  if (chaveAtiva) {
     status.innerHTML = `
-      <span style="color:var(--success)">✓ Chave Gemini configurada</span>
-      <button class="btn btn-sm btn-ghost" onclick="removerChaveGemini()">Remover</button>`;
-    if (input) input.value = '';
+      <span style="color:var(--success)">✓ ${nomeIA} configurado</span>
+      <button class="btn btn-sm btn-ghost" onclick="removerChaveAtiva()">Remover</button>`;
   } else {
-    status.innerHTML = `<span style="color:var(--warning)">⚠ Chave Gemini não configurada</span>`;
+    status.innerHTML = `<span style="color:var(--warning)">⚠ Nenhuma IA configurada — clique em "Configurar IA"</span>`;
   }
+
+  // Atualiza ícone na drop zone
+  const sub = document.getElementById('dropZoneSubtitle');
+  if (sub && chaveAtiva) sub.textContent = `Usando ${nomeIA} para ler o PDF.`;
 }
 
 function salvarChaveEFechar() {
-  const input = document.getElementById('geminiKeyInput');
-  const chave = input?.value.trim();
-  if (!chave) { mostrarToast('Cole a chave antes de salvar.', 'aviso'); return; }
-  salvarChaveGemini(chave);
+  const provedor = document.querySelector('input[name="iaProvider"]:checked')?.value || 'gemini';
+  localStorage.setItem(IA_PROVIDER_LS, provedor);
+
+  if (provedor === 'openai') {
+    const chave = document.getElementById('openaiKeyInput')?.value.trim();
+    if (!chave) { mostrarToast('Cole a chave OpenAI antes de salvar.', 'aviso'); return; }
+    salvarChaveOpenAI(chave);
+  } else {
+    const chave = document.getElementById('geminiKeyInput')?.value.trim();
+    if (!chave) { mostrarToast('Cole a chave Gemini antes de salvar.', 'aviso'); return; }
+    salvarChaveGemini(chave);
+  }
+
   renderizarStatusChave();
   fecharModal('modalGeminiKey');
-  mostrarToast('Chave Gemini salva!', 'sucesso');
+  mostrarToast('Configuração de IA salva!', 'sucesso');
 }
 
-function removerChaveGemini() {
-  salvarChaveGemini('');
+function removerChaveAtiva() {
+  const provedor = obterProvedorIA();
+  if (provedor === 'openai') salvarChaveOpenAI('');
+  else salvarChaveGemini('');
   renderizarStatusChave();
   mostrarToast('Chave removida.', 'info');
 }
@@ -199,14 +228,17 @@ function iniciarImportacao(arquivo) {
     mostrarToast('Selecione o mês antes de importar.', 'aviso'); return;
   }
 
-  const chave = obterChaveGemini();
+  const provedor = obterProvedorIA();
+  const chave    = provedor === 'openai' ? obterChaveOpenAI() : obterChaveGemini();
+
   if (!chave) {
     abrirModal('modalGeminiKey');
-    mostrarToast('Configure sua chave Gemini para usar a IA.', 'aviso');
+    mostrarToast('Configure a IA antes de importar.', 'aviso');
     return;
   }
 
-  processarComGemini(arquivo, chave);
+  if (provedor === 'openai') processarComOpenAI(arquivo, chave);
+  else processarComGemini(arquivo, chave);
 }
 
 // ============================================================
@@ -360,6 +392,141 @@ function setProgresso(msg, pct) {
   if (bar) bar.style.width = pct + '%';
   if (txt) txt.textContent = msg;
 }
+
+// ============================================================
+// EXTRAÇÃO VIA OPENAI GPT
+// ============================================================
+
+/** Extrai texto de todas as páginas do PDF usando PDF.js */
+async function extrairTextoPDF(arquivo) {
+  const pdfjsLib = window['pdfjs-dist/build/pdf'];
+  if (!pdfjsLib) throw new Error('PDF.js não carregado');
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const buffer = await arquivo.arrayBuffer();
+  const pdf    = await pdfjsLib.getDocument({ data: buffer }).promise;
+  let texto    = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page    = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    texto += content.items.map(it => it.str).join(' ') + '\n';
+  }
+  return texto;
+}
+
+async function processarComOpenAI(arquivo, chaveApi) {
+  mostrarLoading(true);
+  const progressoEl = document.getElementById('progressoImport');
+  if (progressoEl) progressoEl.style.display = 'block';
+  setProgresso('Lendo arquivo PDF…', 15);
+
+  try {
+    const texto = await extrairTextoPDF(arquivo);
+    setProgresso('Enviando para o GPT…', 40);
+
+    const prompt = `Analise esta fatura de cartão de crédito e extraia todos os lançamentos.
+Retorne SOMENTE um JSON válido, sem markdown, sem texto antes ou depois.
+
+Formato:
+{
+  "lancamentos": [
+    { "data": "DD/MM", "descricao": "EXATAMENTE como aparece na fatura", "valor": 123.45 }
+  ]
+}
+
+Regras OBRIGATÓRIAS:
+- Copie a descrição EXATAMENTE como está — não traduza, não resuma, não limpe
+- Inclua TODOS os lançamentos de compra
+- EXCLUA: total da fatura, pagamentos anteriores, créditos, juros, IOF, encargos
+- "valor" deve ser número positivo com ponto decimal (ex: 49.90)
+- "data" deve ser DD/MM
+- Se aparecer parcela no texto (ex: "02/12"), mantenha na descrição
+
+FATURA:
+${texto}`;
+
+    const resposta = await fetch('https://api.openai.com/v1/chat/completions', {
+      method : 'POST',
+      headers: {
+        'Content-Type' : 'application/json',
+        'Authorization': `Bearer ${chaveApi}`
+      },
+      body: JSON.stringify({
+        model          : 'gpt-4o-mini',
+        messages       : [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        temperature    : 0.1
+      })
+    });
+
+    setProgresso('Processando resposta do GPT…', 70);
+
+    if (!resposta.ok) {
+      const erro = await resposta.json().catch(() => ({}));
+      const msg  = erro?.error?.message || `Erro ${resposta.status}`;
+      if (resposta.status === 401) {
+        mostrarToast('Chave OpenAI inválida. Configure novamente.', 'erro');
+        abrirModal('modalGeminiKey');
+      } else if (resposta.status === 429) {
+        mostrarToast('Limite da API OpenAI atingido. Aguarde alguns minutos.', 'aviso');
+      } else {
+        mostrarToast(`Erro OpenAI: ${msg}`, 'erro');
+      }
+      return;
+    }
+
+    const dados   = await resposta.json();
+    const textoIA = dados?.choices?.[0]?.message?.content || '';
+
+    setProgresso('Interpretando lançamentos…', 85);
+
+    let lancamentosIA;
+    try {
+      const parsed  = JSON.parse(textoIA);
+      lancamentosIA = parsed.lancamentos || parsed;
+      if (!Array.isArray(lancamentosIA)) throw new Error('Formato inesperado');
+    } catch {
+      console.error('[OpenAI] Resposta bruta:', textoIA);
+      mostrarToast('GPT retornou formato inesperado. Tente novamente.', 'erro');
+      return;
+    }
+
+    if (!lancamentosIA.length) {
+      mostrarToast('Nenhum lançamento encontrado pelo GPT. Verifique o PDF.', 'aviso');
+      return;
+    }
+
+    setProgresso(`${lancamentosIA.length} lançamentos extraídos!`, 100);
+
+    const linhas = lancamentosIA.map(l => ({
+      descricao     : (l.descricao || '').substring(0, 80),
+      valor         : parseFloat(String(l.valor).replace(',', '.')) || 0,
+      data          : normalizarDataIA(l.data, estadoImport.mes),
+      dono          : null,
+      parcela_atual : extrairParcelaAtual(l.descricao),
+      total_parcelas: extrairTotalParcelas(l.descricao),
+      classificacao : 'manual'
+    })).filter(l => l.valor > 0 && l.valor < 99_999);
+
+    await aplicarMemoriaDescricoes(linhas);
+
+    setTimeout(() => {
+      if (progressoEl) progressoEl.style.display = 'none';
+      estadoImport.classificados = linhas;
+      iniciarClassificacaoManual();
+    }, 600);
+
+  } catch (err) {
+    console.error('[OpenAI] Erro:', err);
+    mostrarToast('Erro ao processar com GPT. Tente novamente.', 'erro');
+    if (progressoEl) progressoEl.style.display = 'none';
+  } finally {
+    mostrarLoading(false);
+  }
+}
+
+// ============================================================
 
 /** Converte "DD/MM" da IA para "YYYY-MM-DD" usando o mês da fatura como referência */
 function normalizarDataIA(dataStr, mesFatura) {
