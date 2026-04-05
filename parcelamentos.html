@@ -40,19 +40,30 @@
         <header class="page-header">
             <div class="page-title">
                 <button id="hamburger" class="btn btn-ghost">☰</button>
-                <h1>Timeline de Parcelamentos</h1>
+                <h1>Parcelamentos</h1>
             </div>
-            <div class="filters">
-                <select id="filtroParcCartao" class="form-control" style="min-width:200px"></select>
+            <div class="filters" style="gap:10px">
+                <select id="filtroParcCartao" class="form-control" style="min-width:180px"></select>
+                <div style="display:flex;border:1px solid var(--border-md);border-radius:var(--radius-md);overflow:hidden">
+                    <button id="btnViewTimeline" onclick="alternarVisualizacao('timeline')"
+                            class="btn btn-sm" style="border-radius:0;border-right:1px solid var(--border-md);padding:7px 14px">
+                        ⊞ Timeline
+                    </button>
+                    <button id="btnViewLista" onclick="alternarVisualizacao('lista')"
+                            class="btn btn-sm" style="border-radius:0;padding:7px 14px">
+                        ≡ Lista
+                    </button>
+                </div>
             </div>
         </header>
 
-        <!-- Cards de resumo -->
-        <div class="stats-grid mb-4" id="resumoParcelas">
-            <!-- JS popula aqui -->
-        </div>
+        <!-- Resumo de estatísticas -->
+        <div id="resumoParcelas" class="mb-4"></div>
 
-        <!-- Linha do tempo -->
+        <!-- Encerram em breve (expansível) -->
+        <div id="encerramBreve" class="mb-4" style="display:none"></div>
+
+        <!-- Timeline / Lista -->
         <div id="linhaTempo">
             <p class="empty-state">Carregando parcelamentos…</p>
         </div>
@@ -88,6 +99,10 @@
                 <div class="fl-group">
                     <select id="lr-dono" class="form-control"></select>
                     <label>Responsável</label>
+                </div>
+                <div class="fl-group">
+                    <select id="lr-categoria" class="form-control"></select>
+                    <label>Categoria</label>
                 </div>
                 <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:.875rem">
                     <input type="checkbox" id="lr-parcelado"> É parcelado?

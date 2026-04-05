@@ -818,6 +818,8 @@ function pularClassificacao() {
   const i = estadoImport.indexAtual;
   estadoImport.classificados[i].dono          = [{ pessoa_id: 'eu', percentual: 100 }];
   estadoImport.classificados[i].classificacao = 'pulado';
+  estadoImport.classificados[i].apelido       = '';
+  estadoImport.classificados[i].categoria     = '';
   fecharModal('modalClassificacao');
   setTimeout(avancarParaProxima, 200);
 }
@@ -829,6 +831,11 @@ function preencherModalClassificacao(lancamento, totalPendentes) {
   document.getElementById('cl-total-parcelas').value  = lancamento.total_parcelas || 1;
   document.getElementById('cl-parcela-atual').value   = lancamento.parcela_atual  || 1;
   document.getElementById('cl-lembrar').checked       = false;
+
+  // Apelido e categoria
+  const inpApelido = document.getElementById('cl-apelido');
+  if (inpApelido) inpApelido.value = lancamento.apelido || '';
+  popularSelectCategorias('cl-categoria', lancamento.categoria || '');
 
   const selDono = document.getElementById('cl-dono-principal');
   if (selDono) {
@@ -868,7 +875,9 @@ function salvarClassificacaoAtual(e) {
   const donoSel  = document.getElementById('cl-dono-principal').value;
   const parcTotal = parseInt(document.getElementById('cl-total-parcelas').value) || 1;
   const parcAtual = parseInt(document.getElementById('cl-parcela-atual').value)  || 1;
-  const lembrar  = document.getElementById('cl-lembrar').checked;
+  const lembrar   = document.getElementById('cl-lembrar').checked;
+  const apelido   = document.getElementById('cl-apelido')?.value.trim() || '';
+  const categoria = document.getElementById('cl-categoria')?.value || '';
 
   let dono;
   if (donoSel === 'rateio') {
@@ -890,6 +899,8 @@ function salvarClassificacaoAtual(e) {
   lanc.total_parcelas = parcTotal;
   lanc.parcela_atual  = parcAtual;
   lanc.classificacao  = 'manual';
+  lanc.apelido        = apelido;
+  lanc.categoria      = categoria;
 
   if (lembrar) salvarMemoriaDescricao(lanc);
 
@@ -994,6 +1005,8 @@ async function confirmarImportacao() {
         fatura_id     : faturaId,
         cartao_id     : estadoImport.cartaoId,
         descricao     : l.descricao,
+        apelido       : l.apelido   || '',
+        categoria     : l.categoria || '',
         valor         : l.valor,
         data          : l.data,
         dono          : l.dono,

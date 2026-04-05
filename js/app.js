@@ -10,6 +10,33 @@ let mesSelecionado = getMesAtual();
 // após um lançamento ser salvo via FAB
 window._recarregarPagina = null;
 
+// ── Categorias padrão de finanças pessoais ───────────────────
+const CATEGORIAS_PADRAO = [
+  { id: 'moradia',      nome: 'Moradia'           },
+  { id: 'alimentacao',  nome: 'Alimentação'        },
+  { id: 'transporte',   nome: 'Transporte'         },
+  { id: 'saude',        nome: 'Saúde'              },
+  { id: 'lazer',        nome: 'Lazer'              },
+  { id: 'educacao',     nome: 'Educação'           },
+  { id: 'vestuario',    nome: 'Vestuário'          },
+  { id: 'contas',       nome: 'Contas e Serviços'  },
+  { id: 'financeiro',   nome: 'Financeiro'         },
+  { id: 'compras',      nome: 'Compras'            },
+  { id: 'bem_estar',    nome: 'Bem-estar'          },
+  { id: 'outros',       nome: 'Outros'             },
+];
+
+/** Popula qualquer <select> com as categorias padrão */
+function popularSelectCategorias(selectId, valorAtual = '') {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  sel.innerHTML =
+    '<option value="">— Categoria —</option>' +
+    CATEGORIAS_PADRAO.map(c =>
+      `<option value="${c.id}"${c.id === valorAtual ? ' selected' : ''}>${c.nome}</option>`
+    ).join('');
+}
+
 // ============================================================
 // FORMATAÇÃO
 // ============================================================
@@ -256,6 +283,9 @@ async function carregarDadosLancamentoRapido() {
     const dtInput = document.getElementById('lr-data');
     if (dtInput && !dtInput.value) dtInput.value = new Date().toISOString().slice(0, 10);
 
+    // Categorias
+    popularSelectCategorias('lr-categoria');
+
     inicializarFloatLabels();
   } catch (err) {
     console.error('[FAB] Erro ao carregar dados:', err);
@@ -271,6 +301,7 @@ async function salvarLancamentoRapido(e) {
   const valorStr  = document.getElementById('lr-valor').value;
   const data      = document.getElementById('lr-data').value;
   const donoId    = document.getElementById('lr-dono').value;
+  const categoria = document.getElementById('lr-categoria')?.value || '';
   const parcelado = document.getElementById('lr-parcelado').checked;
   const parcAtual = parseInt(document.getElementById('lr-parcela-atual')?.value) || 1;
   const parcTotal = parseInt(document.getElementById('lr-total-parcelas')?.value) || 1;
@@ -294,6 +325,7 @@ async function salvarLancamentoRapido(e) {
       fatura_id     : faturaId,
       cartao_id     : cartaoId,
       descricao,
+      categoria,
       valor,
       data,
       dono,
