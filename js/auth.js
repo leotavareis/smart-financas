@@ -49,38 +49,46 @@ async function loginComGoogle() {
 async function inicializarUsuario(user) {
   const userRef = db.collection('usuarios').doc(user.uid);
   const snap    = await userRef.get();
-  if (snap.exists) return; // Já inicializado — nada a fazer
 
-  // Documento raiz
-  await userRef.set({
-    nome      : user.displayName || '',
-    email     : user.email      || '',
-    foto      : user.photoURL   || '',
-    criado_em : firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  const batch = db.batch();
-  const ts    = firebase.firestore.FieldValue.serverTimestamp();
-
-  // Cartões padrão: Banco do Brasil, Nubank e C6
-  const cartoesDefault = [
-    { nome: 'Banco do Brasil', cor: '#f59e0b', dia_fechamento: 3,  dia_vencimento: 10, limite: 0 },
-    { nome: 'Nubank',          cor: '#8b5cf6', dia_fechamento: 19, dia_vencimento: 26, limite: 0 },
-    { nome: 'C6',              cor: '#06b6d4', dia_fechamento: 5,  dia_vencimento: 12, limite: 0 }
-  ];
-  cartoesDefault.forEach(c => {
-    batch.set(userRef.collection('cartoes').doc(), { ...c, criado_em: ts });
-  });
-
-  // 3 pessoas em branco para o usuário completar depois
-  const coresPessoas = ['#3b82f6', '#22c55e', '#f472b6'];
-  for (let i = 0; i < 3; i++) {
-    batch.set(userRef.collection('pessoas').doc(), {
-      nome: '', cor: coresPessoas[i], criado_em: ts
+  // 1. Criar documento do usuário se não existir
+  if (!snap.exists) {
+    await userRef.set({
+      nome      : user.displayName || '',
+      email     : user.email      || '',
+      foto      : user.photoURL   || '',
+      criado_em : firebase.firestore.FieldValue.serverTimestamp()
     });
   }
 
-  await batch.commit();
+  const ts = firebase.firestore.FieldValue.serverTimestamp();
+
+  // 2. Verificar e criar cartões padrão se a coleção estiver vazia
+  const snapCartoes = await userRef.collection('cartoes').limit(1).get();
+  if (snapCartoes.empty) {
+    const batch = db.batch();
+    const cartoesDefault = [
+      { nome: 'Banco do Brasil', cor: '#f59e0b', dia_fechamento: 3,  dia_vencimento: 10, limite: 0 },
+      { nome: 'Nubank',          cor: '#8b5cf6', dia_fechamento: 19, dia_vencimento: 26, limite: 0 },
+      { nome: 'C6',              cor: '#06b6d4', dia_fechamento: 5,  dia_vencimento: 12, limite: 0 }
+    ];
+    cartoesDefault.forEach(c => {
+      batch.set(userRef.collection('cartoes').doc(), { ...c, criado_em: ts });
+    });
+    await batch.commit();
+  }
+
+  // 3. Verificar e criar pessoas padrão se a coleção estiver vazia
+  const snapPessoas = await userRef.collection('pessoas').limit(1).get();
+  if (snapPessoas.empty) {
+    const batch = db.batch();
+    const coresPessoas = ['#3b82f6', '#22c55e', '#f472b6'];
+    for (let i = 0; i < 3; i++) {
+      batch.set(userRef.collection('pessoas').doc(), {
+        nome: '', cor: coresPessoas[i], criado_em: ts
+      });
+    }
+    await batch.commit();
+  }
 }
 
 /**
