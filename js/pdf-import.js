@@ -227,7 +227,7 @@ function configurarDropZone() {
   if (mesInput && !mesInput.value) mesInput.value = getMesAtual();
 }
 
-function iniciarImportacao(arquivo) {
+async function iniciarImportacao(arquivo) {
   estadoImport.cartaoId = document.getElementById('selectCartaoImport')?.value;
   estadoImport.mes      = document.getElementById('mesImport')?.value;
 
@@ -238,12 +238,45 @@ function iniciarImportacao(arquivo) {
     mostrarToast('Selecione o mês antes de importar.', 'aviso'); return;
   }
 
+  // ── 1. Tenta parser local (BB e Nubank) — sem API, sem limite ──
+  mostrarLoading(true);
+  const progressoEl = document.getElementById('progressoImport');
+  if (progressoEl) progressoEl.style.display = 'block';
+  setProgresso('Lendo PDF…', 20);
+
+  const resultado = await parsearLocalPDF(arquivo, estadoImport.mes);
+
+  if (resultado) {
+    const nomesBanco = { bb: 'Banco do Brasil', nubank: 'Nubank' };
+    setProgresso(`${resultado.lancamentos.length} lançamentos encontrados (${nomesBanco[resultado.banco] || resultado.banco})!`, 100);
+    mostrarLoading(false);
+
+    const linhas = resultado.lancamentos.map(l => ({
+      ...l,
+      dono         : null,
+      classificacao: 'manual'
+    }));
+
+    await aplicarMemoriaDescricoes(linhas);
+
+    setTimeout(() => {
+      if (progressoEl) progressoEl.style.display = 'none';
+      estadoImport.classificados = linhas;
+      iniciarClassificacaoManual();
+    }, 600);
+    return;
+  }
+
+  // ── 2. Formato não reconhecido — tenta IA se configurada ──
+  mostrarLoading(false);
+  if (progressoEl) progressoEl.style.display = 'none';
+
   const provedor = obterProvedorIA();
   const chave    = provedor === 'openai' ? obterChaveOpenAI() : obterChaveGemini();
 
   if (!chave) {
+    mostrarToast('Formato não reconhecido (BB/Nubank esperados). Configure uma IA para outros formatos.', 'aviso');
     abrirModalIAConfig();
-    mostrarToast('Configure a IA antes de importar.', 'aviso');
     return;
   }
 
@@ -411,7 +444,10 @@ function setProgresso(msg, pct) {
 // EXTRAÇÃO VIA OPENAI GPT
 // ============================================================
 
-/** Extrai texto de todas as páginas do PDF usando PDF.js */
+/**
+ * Extrai texto do PDF preservando a estrutura de linhas.
+ * Agrupa itens pelo eixo Y para reconstruir linhas originais do documento.
+ */
 async function extrairTextoPDF(arquivo) {
   const pdfjsLib = window['pdfjs-dist/build/pdf'];
   if (!pdfjsLib) throw new Error('PDF.js não carregado');
@@ -420,13 +456,132 @@ async function extrairTextoPDF(arquivo) {
 
   const buffer = await arquivo.arrayBuffer();
   const pdf    = await pdfjsLib.getDocument({ data: buffer }).promise;
-  let texto    = '';
+  const todasLinhas = [];
+
   for (let i = 1; i <= pdf.numPages; i++) {
     const page    = await pdf.getPage(i);
     const content = await page.getTextContent();
-    texto += content.items.map(it => it.str).join(' ') + '\n';
+
+    // Agrupar por posição Y (arredondada) para reconstruir linhas
+    const grupos = new Map();
+    for (const item of content.items) {
+      const y = Math.round(item.transform[5] / 3) * 3;
+      if (!grupos.has(y)) grupos.set(y, []);
+      grupos.get(y).push(item);
+    }
+
+    // Ordenar de cima para baixo (Y maior = mais acima na página)
+    for (const y of [...grupos.keys()].sort((a, b) => b - a)) {
+      const linha = grupos.get(y)
+        .sort((a, b) => a.transform[4] - b.transform[4])
+        .map(it => it.str)
+        .join(' ')
+        .trim();
+      if (linha) todasLinhas.push(linha);
+    }
   }
-  return texto;
+
+  return todasLinhas.join('\n');
+}
+
+// ============================================================
+// PARSER LOCAL — BB e Nubank (sem API externa, sem limites)
+// ============================================================
+
+const MESES_PT = { JAN:1, FEV:2, MAR:3, ABR:4, MAI:5, JUN:6, JUL:7, AGO:8, SET:9, OUT:10, NOV:11, DEZ:12 };
+
+function detectarBanco(texto) {
+  const t = texto.toUpperCase();
+  if (t.includes('BANCO DO BRASIL') || t.includes('SALDO FATURA ANTERIOR') ||
+      t.includes('OUROCARD') || t.includes('SMILES PLATINUM')) return 'bb';
+  if (t.includes('NUBANK') || t.includes('NU PAGAMENTOS') ||
+      t.includes('TRANSAÇÕES DE') || t.includes('TRANSACOES DE')) return 'nubank';
+  return 'desconhecido';
+}
+
+/** Parser para fatura do Banco do Brasil */
+function parsearFaturaBB(linhas, mesFatura) {
+  const lancamentos = [];
+  // Formato: DD/MM DESCRIÇÃO [CIDADE] BR R$ VALOR
+  const RE = /^(\d{2}\/\d{2})\s+(.+?)\s+BR\s+R\$\s*(-?[\d.]+,\d{2})/;
+  const SKIP = /^(Lazer|Restaurante|Sa[uú]de|Servi[cç]|Supermercado|Transporte|Vest|Outros|Compras|Data\s|Descri|Lançamentos|Leandro|Página|Fale|Informações|Resumo|Datas|Valor|Pontos|Limite|IOF|Juros|Encargos|Mensalidades|Opções|Pague|Paga)/i;
+
+  const ano = mesFatura?.split('-')[0] || String(new Date().getFullYear());
+
+  for (const linha of linhas) {
+    if (SKIP.test(linha.trim())) continue;
+    const m = linha.match(RE);
+    if (!m) continue;
+
+    const valorStr = m[3];
+    const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
+    if (valor <= 0) continue;
+
+    const [dia, mes] = m[1].split('/');
+    const mParcela   = m[2].match(/PARC\s+(\d+)\/(\d+)/i);
+
+    lancamentos.push({
+      descricao     : m[2].trim(),
+      valor,
+      data          : `${ano}-${mes}-${dia}`,
+      parcela_atual : mParcela ? parseInt(mParcela[1]) : 1,
+      total_parcelas: mParcela ? parseInt(mParcela[2]) : 1,
+    });
+  }
+  return lancamentos;
+}
+
+/** Parser para fatura do Nubank */
+function parsearFaturaNubank(linhas, mesFatura) {
+  const lancamentos = [];
+  // Formato: DD MMM •••• XXXX Descrição R$ VALOR
+  const MESES = 'JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ';
+  const RE = new RegExp(`^(\\d{2})\\s+(${MESES})\\s+[^\\d\\n]*?(\\d{4})\\s+(.+?)\\s+R\\$\\s*([\\d.]+,\\d{2})`, 'i');
+  const SKIP = /pagamento|saldo restante|financiamento/i;
+
+  const ano = mesFatura?.split('-')[0] || String(new Date().getFullYear());
+
+  for (const linha of linhas) {
+    if (SKIP.test(linha)) continue;
+    const m = linha.match(RE);
+    if (!m) continue;
+
+    const valor = parseFloat(m[5].replace(/\./g, '').replace(',', '.'));
+    if (valor <= 0) continue;
+
+    const numMes    = MESES_PT[m[2].toUpperCase()];
+    const mParcela  = m[4].match(/[Pp]arcela\s+(\d+)\/(\d+)|PARC\s+(\d+)\/(\d+)/i);
+
+    lancamentos.push({
+      descricao     : m[4].trim(),
+      valor,
+      data          : `${ano}-${String(numMes).padStart(2,'0')}-${m[1]}`,
+      parcela_atual : mParcela ? parseInt(mParcela[1] || mParcela[3]) : 1,
+      total_parcelas: mParcela ? parseInt(mParcela[2] || mParcela[4]) : 1,
+    });
+  }
+  return lancamentos;
+}
+
+/** Tenta parsear localmente. Retorna {lancamentos, banco} ou null. */
+async function parsearLocalPDF(arquivo, mesFatura) {
+  try {
+    const texto  = await extrairTextoPDF(arquivo);
+    const linhas = texto.split('\n');
+    const banco  = detectarBanco(texto);
+    console.log('[Parser] Banco detectado:', banco);
+
+    let lancamentos = [];
+    if (banco === 'bb')     lancamentos = parsearFaturaBB(linhas, mesFatura);
+    if (banco === 'nubank') lancamentos = parsearFaturaNubank(linhas, mesFatura);
+
+    console.log(`[Parser] ${lancamentos.length} lançamentos extraídos`);
+    if (lancamentos.length >= 1) return { lancamentos, banco, texto };
+    return null;
+  } catch (err) {
+    console.warn('[Parser] Falha no parser local:', err);
+    return null;
+  }
 }
 
 async function processarComOpenAI(arquivo, chaveApi) {
